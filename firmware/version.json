@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "releaseDate": "2026-08-20 04:51:21 UTC",
+  "targetChip": "ESP32-C3",
+  "file": "firmware_autodoor_ota.bin",
+  "changelog": "เพิ่มฟังก์ชันอัปเดตเฟิร์มแวร์ออนไลน์ (Online OTA Update) จาก GitHub โดยตรงผ่านหน้าตั้งค่า และปรับปรุงความเสถียรของระบบ"
+}
