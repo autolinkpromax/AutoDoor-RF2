@@ -1,0 +1,144 @@
+<div id="viewEditor" class="hidden" style="position:fixed;inset:0;background:var(--bg);z-index:40;overflow:auto;">
+  <div class="appChrome">
+    <button type="button" class="menuBtn" data-action="close-editor">←</button>
+    <h2 class="appTitle" id="editorTitle">เพิ่ม Tag ใหม่</h2>
+    <button type="button" class="menuBtn" style="opacity:.35;border-radius:50%">#</button>
+  </div>
+  <main class="edMain">
+    <div id="edScan" class="drScan edScanTap edScanBtn edScanLearnBtn" data-action="ed-start-learn" role="button" tabindex="0">
+      <span id="edScanLabel" class="edScanLabel">กดเพื่อเรียนรู้ Tag</span>
+      <div class="learn-indicators">
+        <div class="learn-dot" id="edDot1"></div>
+        <div class="learn-dot" id="edDot2"></div>
+        <div class="learn-dot" id="edDot3"></div>
+      </div>
+    </div>
+    <input type="hidden" id="edTagMac" />
+    <div class="edTagSettings">
+      <section class="edSec hidden" id="edRfRoleSec">
+        <h3 class="edSecTitle">หน้าที่ของปุ่มรีโมท (Button Function)</h3>
+        <select id="edRfRole" style="width:100%; padding:10px 12px; border-radius:8px; background:var(--card-bg, #222); color:#fff; border:1px solid #444; font-size:14px; margin-top:6px;">
+          <option value="0">🟢 เปิดอัตโนมัติ (Auto / Toggle)</option>
+          <option value="4">🟢 เปิดอัตโนมัติ (Auto / Open)</option>
+          <option value="1">🟡 เปิดค้าง (Hold Open)</option>
+          <option value="2">🔴 สั่งปิด (Close / ปลดล็อกโหมดค้าง)</option>
+          <option value="3">⏹️ หยุดฉุกเฉิน (Emergency Stop)</option>
+        </select>
+        <p class="edHint" style="margin-top:6px;">เลือกพฤติกรรมเมื่อกดปุ่มนี้บนรีโมทหรือสวิตช์ไร้สาย 433MHz</p>
+      </section>
+      <section class="edSec">
+        <h3 class="edSecTitle" id="edSecTitleHold">เมื่อ Tag หาย</h3>
+        <div id="edTagHoldWrap">
+          <label>Tag หาย (วินาที)</label>
+          <input type="number" id="edTagHoldSec" min="1" max="120" step="1" value="20" />
+          <p class="edHint">ไม่มีสัญญาณครบกี่วินาทีถือว่า Tag หาย — ใช้เมื่อรถวิ่งเร็วจนไม่ถึงเกณฑ์ผ่านประตู</p>
+        </div>
+        <label>ระยะเวลาเปิดประตู (วินาที)</label>
+        <input type="number" id="edTagOpenDurationSec" min="0" max="60" step="1" value="0" />
+        <p class="edHint">เปิดประตูกี่วินาทีก่อนสั่งหยุดรอ (0 = เปิดสุดตามปกติ, รถมอเตอร์ไซค์/จักรยานแนะนำ: 4-6 วิ)</p>
+        <label style="margin-top:10px; display:block;">หยุดรอก่อนปิดประตู (วินาที)</label>
+        <input type="number" id="edTagCloseDelaySec" min="0" max="300" step="1" value="10" />
+        <p class="edHint" id="edCloseDelayHint">หยุดรอกี่วินาทีก่อนสั่งปิดประตู (หรือหลัง Tag หาย)</p>
+        <label style="margin-top:10px; display:block;">หน่วงเวลาปิดหลังตรวจจับรถสำเร็จ (วินาที)</label>
+        <input type="number" id="edTagSafetyCloseDelaySec" min="0" max="60" step="1" value="3" data-action="update-ed-safety-delay" />
+        <p class="edHint" id="edSafetyCloseHint">เมื่อรถวิ่งผ่านเซ็นเซอร์กันหนีบสำเร็จ รอกี่วินาทีแล้วปิดประตู (ค่าเริ่มต้น: 5 วินาที, แนะนำ: 3-5 วินาที)</p>
+        <div id="edSafetyCloseWarn" class="hint warnMsg hidden" style="margin-top:4px; font-size:12px; color:#f59e0b; line-height:1.45; background:rgba(245,158,11,0.1); border-left:3px solid #f59e0b; padding:6px 10px; border-radius:4px;">
+          ⚠️ <strong>คำเตือนความปลอดภัย:</strong> ตั้ง 0-1 วินาที ประตูจะเริ่มปิดตามหลังทันทีที่พ้นลำแสง เหมาะสำหรับผู้ที่ต้องการความรวดเร็วสูงสุด แต่โปรดระวังการเฉี่ยวชนท้ายรถหรือช่วงต่อมอเตอร์ไซค์
+        </div>
+      </section>
+      <section class="edSec edRssiCard" id="edRssiMinCard">
+        <div class="edRssiCardHead">
+          <h3 class="edSecTitle">ระยะเปิดประตู</h3>
+          <span class="edRssiBadge" id="edRssiDbm">-100 dBm</span>
+        </div>
+        <p class="edHint">เลื่อนไปทางซ้าย เปิดประตูได้ไกลมากขึ้น</p>
+        <input type="range" class="edRssiRange" id="edTagRssiMin" min="-120" max="-40" step="1" value="-100" data-action="update-ed-rssi" />
+      </section>
+      <section class="edSec">
+        <h3 class="edSecTitle">ไอคอนยานพาหนะ (Icon)</h3>
+        <input type="hidden" id="edTagIcon" value="auto" />
+        <div class="icon-picker-grid" id="edIconGrid">
+          <button type="button" class="icon-chip active" data-action="select-icon" data-icon="auto" title="อัตโนมัติ (ตามชื่อ Tag)">
+            <span class="chip-emoji">🏷️</span>
+            <span class="chip-label">อัตโนมัติ</span>
+          </button>
+          <button type="button" class="icon-chip" data-action="select-icon" data-icon="suv" title="SUV / รถอเนกประสงค์">
+            <span class="chip-emoji">🚙</span>
+            <span class="chip-label">SUV</span>
+          </button>
+          <button type="button" class="icon-chip" data-action="select-icon" data-icon="sedan" title="รถเก๋ง / Sedan">
+            <span class="chip-emoji">🚗</span>
+            <span class="chip-label">รถเก๋ง</span>
+          </button>
+          <button type="button" class="icon-chip" data-action="select-icon" data-icon="pickup" title="รถกระบะ / Pickup">
+            <span class="chip-emoji">🚚</span>
+            <span class="chip-label">รถกระบะ</span>
+          </button>
+          <button type="button" class="icon-chip" data-action="select-icon" data-icon="bike" title="บิ๊กไบค์ / มอเตอร์ไซค์">
+            <span class="chip-emoji">🏍️</span>
+            <span class="chip-label">มอเตอร์ไซค์</span>
+          </button>
+          <button type="button" class="icon-chip" data-action="select-icon" data-icon="scooter" title="สกู๊ตเตอร์ / มอเตอร์ไซค์เล็ก">
+            <span class="chip-emoji">🛵</span>
+            <span class="chip-label">สกู๊ตเตอร์</span>
+          </button>
+          <button type="button" class="icon-chip" data-action="select-icon" data-icon="van" title="รถตู้ / Van">
+            <span class="chip-emoji">🚐</span>
+            <span class="chip-label">รถตู้</span>
+          </button>
+          <button type="button" class="icon-chip" data-action="select-icon" data-icon="rf" title="รีโมท RF / สวิตช์พกพา">
+            <span class="chip-emoji">🔑</span>
+            <span class="chip-label">รีโมท</span>
+          </button>
+          <button type="button" class="icon-chip" data-action="select-icon" data-icon="bicycle" title="จักรยาน">
+            <span class="chip-emoji">🚲</span>
+            <span class="chip-label">จักรยาน</span>
+          </button>
+          <button type="button" class="icon-chip" data-action="select-icon" data-icon="person" title="คนเดิน / ประตูเล็ก">
+            <span class="chip-emoji">🚶</span>
+            <span class="chip-label">คนเดิน</span>
+          </button>
+        </div>
+        <p class="edHint" style="margin-top:8px;">เลือกไอคอนมาตรฐานเพื่อแสดงบนหน้ารายชื่ออุปกรณ์และบันทึกประวัติการเปิดประตู</p>
+      </section>
+      <section class="edSec" id="edSchedSec">
+        <div class="swRow" style="margin-bottom:0">
+          <div>
+            <h3 class="edSecTitle" style="margin-bottom:2px">จำกัดช่วงเวลาใช้งาน</h3>
+            <p class="edHint" style="margin:0">อนุญาตให้สั่งงานได้เฉพาะช่วงเวลาที่กำหนด</p>
+          </div>
+          <label class="sw" title="จำกัดช่วงเวลาใช้งาน">
+            <input type="checkbox" id="edSchedEnabled" data-action="toggle-ed-sched" />
+            <span class="swTrack"></span>
+          </label>
+        </div>
+        <div id="edSchedBody" class="hidden" style="margin-top:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:13px; color:var(--text-muted, #aaa); display:block; margin-bottom:4px">เวลาเริ่มต้น</label>
+              <input type="time" id="edSchedStart" value="08:00" style="width:100%; padding:8px 10px; border-radius:6px; background:var(--card-bg, #222); color:#fff; border:1px solid #444; font-size:14px;" />
+            </div>
+            <div>
+              <label style="font-size:13px; color:var(--text-muted, #aaa); display:block; margin-bottom:4px">เวลาสิ้นสุด</label>
+              <input type="time" id="edSchedEnd" value="17:00" style="width:100%; padding:8px 10px; border-radius:6px; background:var(--card-bg, #222); color:#fff; border:1px solid #444; font-size:14px;" />
+            </div>
+          </div>
+          <p class="edHint" style="margin-top:8px; font-size:12px">💡 หากปิดสวิตช์ Tag จะใช้งานได้ตลอด 24 ชั่วโมง (รองรับข้ามเที่ยงคืน เช่น 22:00 ถึง 06:00)</p>
+        </div>
+      </section>
+      <section class="edSec">
+        <h3 class="edSecTitle">ชื่อ Tag</h3>
+        <div class="inpWrap">
+          <input id="edName" placeholder="เช่น Tag A7:94" maxlength="64" />
+          <span class="inpIcon">✎</span>
+        </div>
+      </section>
+    </div>
+    <div id="edAdmin" class="hidden" style="margin-top:14px">
+      <button type="button" class="btnStop" style="width:100%" id="btnEdDelete" data-action="delete-tag-editor">ลบ Tag</button>
+    </div>
+    <div class="hint" id="edMsg"></div>
+    <button type="button" class="btnSaveEd" data-action="save-editor">💾 บันทึกข้อมูล</button>
+    <button type="button" class="btnCancelDoor" data-action="close-editor">✕ ยกเลิก</button>
+  </main>
+</div>

@@ -1,0 +1,18 @@
+---
+description: กฎการแสดงผลข้อความและสัญลักษณ์ใน IDE Chat (ห้ามใช้ LaTeX Math Mode)
+globs:
+alwaysApply: true
+---
+
+# IDE Chat Formatting Rules
+
+## ห้ามใช้ LaTeX Math Mode
+- ห้ามใช้ syntax `$ ... $` หรือ `$$ ... $$`
+- ห้ามใช้คำสั่ง `\rightarrow`, `\leftarrow`, `\frac`, `\approx`, `\times`, `\ge`, `\le` ในข้อความแชตหรือ markdown ทั่วไป
+- เหตุผล: IDE Chat UI และ Markdown Renderers บางตัวไม่มี KaTeX Plugin ทำให้แสดงผลเป็นโค้ดดิบ หรือ Missing Glyph Box / ไอคอนเพี้ยน
+
+## ให้ใช้สัญลักษณ์มาตรฐาน (UTF-8 / Plain Symbols)
+- ใช้ลูกศร Unicode: `➔`, `➜`, `→`, `->`, `=>`
+- ใช้ตัวเลขและการคำนวณธรรมดา: `5 -> 4 -> 3 -> 2 -> 1`
+- ใช้เครื่องหมาย: `+`, `-`, `*`, `/`, `=`, `%`
+- ใช้อีโมจิมาตรฐาน: `✅`, `❌`, `⏱️`, `🔍`, `🛡️`, `🚀`

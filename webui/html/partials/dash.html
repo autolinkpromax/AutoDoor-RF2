@@ -1,0 +1,69 @@
+<div id="viewDash" class="hidden">
+  <div id="connBanner" class="connBanner hidden" role="status">ออฟไลน์ — ไม่เชื่อมต่อเครื่อง</div>
+  <div class="dashWrap">
+    <div class="dashStatus">
+      <div class="gate-visual closed" id="gateVisual">
+        <div class="gate-track"></div>
+        <div class="gate-pillar left"><div class="gate-led"></div></div>
+        <div class="gate-frame">
+          <div class="gate-bars">
+            <div class="gate-bar"></div><div class="gate-bar"></div><div class="gate-bar"></div>
+            <div class="gate-bar"></div><div class="gate-bar"></div><div class="gate-bar"></div>
+            <div class="gate-bar"></div>
+          </div>
+        </div>
+        <div class="gate-pillar right"></div>
+      </div>
+      <p class="dashStatusMain closed" id="dashStatusMain">
+        <span class="dashPulse pulse-red" id="dashPulse"></span>
+        <span id="dashStatusText">ประตูปิด</span>
+      </p>
+      <div class="dashSensorGrid" id="dashSensorGrid" style="display:flex; gap:8px; justify-content:center; margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08); font-size:12px;">
+        <div class="dashSensorItem" id="dashMagWrap" style="flex:1; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:6px 8px; text-align:center;">
+          <div style="color:var(--muted); font-size:11px; margin-bottom:2px;">🧲 แม่เหล็ก</div>
+          <div id="dashMagState" style="font-weight:600;">—</div>
+        </div>
+        <div class="dashSensorItem" id="dashSafetyWrap" style="flex:1; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:6px 8px; text-align:center;">
+          <div style="color:var(--muted); font-size:11px; margin-bottom:2px;">📡 อินฟาเรด (กันหนีบ)</div>
+          <div id="dashSafetyState" style="font-weight:600;">—</div>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="dashAct open" data-action="door-send" data-slot="open"><span class="actL"><span class="actIco">🔓</span>เปิดประตู</span><span class="actChev">›</span></button>
+    <button type="button" class="dashAct stop" data-action="door-send" data-slot="stop"><span class="actL"><span class="actIco">⏹</span>หยุด</span><span class="actChev">■</span></button>
+    <button type="button" class="dashAct close" data-action="door-send" data-slot="close"><span class="actL"><span class="actIco">🔒</span>ปิดประตู</span><span class="actChev">›</span></button>
+    <div id="dashTagSection" class="dashTagSection hidden">
+      <div id="dashTagList"></div>
+    </div>
+    <div id="dashEventSection" class="dashEventSection" style="margin-top:16px; background:#070d19; border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:16px 16px; text-align:left;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px;">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:16px; font-weight:700; color:#f8fafc; letter-spacing:0.2px;">บันทึกเปิดประตู</span>
+            <span id="dashEventCount" style="font-size:11px; font-weight:600; color:#10b981; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); border-radius:9999px; padding:2px 8px; white-space:nowrap;">0 รายการล่าสุด</span>
+          </div>
+          <div style="font-size:12px; color:#64748b; margin-top:2px;">ประวัติการเข้า-ออกอัตโนมัติ</div>
+        </div>
+        <div style="display:inline-flex; gap:8px; align-items:center; flex-shrink:0;">
+          <button type="button" data-action="copy-events" id="dashCopyEventsBtn" title="คัดลอกบันทึก" style="width:36px; height:36px; min-width:0; padding:0; border-radius:10px; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.1); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s ease;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span id="dashCopyEventsText" style="display:none;"></span>
+          </button>
+          <button type="button" data-action="clear-events" id="dashClearEventsBtn" title="ล้างบันทึก" style="width:36px; height:36px; min-width:0; padding:0; border-radius:10px; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.1); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s ease;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div id="dashEventFilterPills" class="dash-filter-bar hidden" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px;"></div>
+      <div id="dashEventList" style="display:flex; flex-direction:column; gap:10px; max-height:420px; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y; padding-right:2px;">
+        <div style="color:var(--muted); font-size:12px; text-align:center; padding:16px;">ยังไม่มีประวัติเปิดประตู</div>
+      </div>
+    </div>
+  </div>
+</div>

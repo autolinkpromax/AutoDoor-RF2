@@ -1,0 +1,41 @@
+.safeModeBanner { margin:0; padding:12px 14px; background:#3d2208; border-bottom:1px solid #a65a12; color:#fdba74; font-size:13px; line-height:1.55; text-align:center; display:flex; flex-direction:column; align-items:center; gap:10px; }
+.safeModeBanner.hidden { display:none; }
+.safeModeBanner b { color:#ffcc80; }
+.safeModeBannerText { max-width:620px; }
+.safeModeBannerBtn { width:auto; min-width:140px; padding:10px 14px; border-radius:999px; }
+.connBanner { margin:0 0 10px; padding:10px 14px; border-radius:12px; background:rgba(232,93,106,.15); border:1px solid rgba(232,93,106,.45); color:#ffb4bc; font-size:13px; font-weight:600; text-align:center; }
+.connBanner.hidden { display:none; }
+.loginGate { position:fixed; inset:0; z-index:200; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:20px; }
+.loginGate.hidden { display:none; }
+.loginCard { width:100%; max-width:360px; background:#101722; border:1px solid var(--line); border-radius:18px; padding:22px 18px; box-shadow:0 16px 48px rgba(0,0,0,.45); }
+.loginCard h2 { margin:0 0 6px; font-size:20px; }
+.loginCard p { margin:0 0 16px; font-size:13px; color:var(--muted); line-height:1.45; }
+.safeModeGate { position:fixed; inset:0; z-index:210; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:20px; }
+.safeModeGate.hidden { display:none; }
+.safeModeGateCard { width:100%; max-width:400px; background:#2a1808; border:1px solid #a65a12; border-radius:18px; padding:24px 20px; box-shadow:0 16px 48px rgba(0,0,0,.45); color:#fdba74; text-align:center; }
+.safeModeGateCard h2 { margin:0 0 10px; font-size:22px; color:#ffcc80; }
+.safeModeGateCard p { margin:0 0 12px; font-size:14px; line-height:1.55; }
+.safeModeGateHint { font-size:13px; color:#e8a96a; margin-bottom:18px !important; }
+.safeModeGateCard .btnPri { width:100%; }
+.safeModeGateCard .btnStop { width:100%; margin-bottom:10px; }
+body.loginLocked #appLoader,
+body.loginLocked #appRoot,
+body.loginLocked #navMount,
+body.loginLocked > .nav,
+body.loginLocked #safeModeMount,
+body.loginLocked #safeModeBanner { display:none !important; }
+body.safeModeLocked #appLoader,
+body.safeModeLocked #appRoot,
+body.safeModeLocked #navMount,
+body.safeModeLocked > .nav,
+body.safeModeLocked #loginMount,
+body.safeModeLocked #safeModeBanner { display:none !important; }
+.dashTagRow { margin-bottom:10px; padding:14px 16px; border-radius:14px; background:#1a1f28; border:1px solid #2a3340; line-height:1.45; }
+.dashTagRow b { font-size:16px; color:#fff; }
+.dashTagRow .dashTagSub { display:block; margin-top:6px; font-size:14px; color:#9aa3b2; line-height:1.45; word-break:break-all; }
+.dashTagRow .dashTagParam { display:block; margin-top:4px; font-size:13px; color:#8b95a5; }
+.rssiPill { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; margin-left:6px; vertical-align:middle; }
+.rssiPill.zoneIn { background:rgba(62,207,142,.2); color:#3ecf8e; border:1px solid rgba(62,207,142,.45); }
+.rssiPill.zoneApp { background:rgba(91,156,255,.2); color:#7eb8ff; border:1px solid rgba(91,156,255,.45); }
+.rssiPill.zoneDep { background:rgba(240,160,80,.2); color:#f0a050; border:1px solid rgba(240,160,80,.45); }
+.rssiPill.zoneOut { background:rgba(120,130,140,.15); color:var(--muted); border:1px solid var(--line); }

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AutoDoor ESP-NOW</title>
+  <style>
+    :root { color-scheme: dark; --bg:#070a0e; --card:#101722; --muted:#8aa0b6; --txt:#e8f0fa; --line:#243044; --pri:#5b9cff; --pri2:#3d7ae6; --ok:#3ecf8e; --stop:#e85d6a; }
+    #appRoot, body > .nav { visibility: hidden; }
+    body.app-ready #appRoot, body.app-ready > .nav { visibility: visible; }
+  </style>
+</head>
+<body>
+  <div id="safeModeBanner" class="safeModeBanner hidden" role="alert">
+    <div class="safeModeBannerText">
+      <b>Safe Mode</b> — โหมดกู้คืน · AP เปิดไม่มีรหัสผ่าน · ปิด Fix IP · ปิด Blynk · เข้าเว็บไม่ต้องรหัสผ่าน<br />
+      เมื่อตั้งค่าเสร็จ ให้กดปุ่ม <b>Reset</b> บนบอร์ด (ไม่ต้องกดค้าง) เพื่อกลับโหมดปกติ
+    </div>
+    <button type="button" class="safeModeBannerBtn btnStop" data-action="restart-device">รีสตาร์ท</button>
+  </div>
+  <div id="loginMount"></div>
+  <div id="safeModeMount"></div>
+  <div id="appLoader">
+    <div class="loaderWaves" aria-hidden="true">
+      <div class="loaderWave loaderWave1"></div>
+      <div class="loaderWave loaderWave2"></div>
+      <div class="loaderWave loaderWave3"></div>
+    </div>
+    <div class="loaderCenter">
+      <div class="loaderRainbowWrap" aria-hidden="true">
+        <div class="loaderRainbow"></div>
+        <div class="loaderRainbowHole"></div>
+      </div>
+      <p class="loaderBrand" id="loaderText">AutoDoor</p>
+    </div>
+  </div>
+  <div id="appRoot"></div>
+  <div id="navMount"></div>
+  <script type="module" src="/assets/__BOOTSTRAP_JS__"></script>
+</body>
+</html>

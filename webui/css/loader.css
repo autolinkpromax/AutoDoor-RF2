@@ -1,0 +1,122 @@
+/* Splash — rainbow spinner + wave background */
+#appLoader {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #05080c;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+#appLoader.done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  display: none;
+}
+
+.loaderWaves {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+.loaderWave {
+  position: absolute;
+  width: 160%;
+  height: 55%;
+  left: -30%;
+  border-radius: 45%;
+  opacity: 0.45;
+  filter: blur(2px);
+}
+.loaderWave1 {
+  bottom: -8%;
+  background: linear-gradient(90deg, rgba(91,156,255,0.55), rgba(61,122,230,0.25), rgba(91,156,255,0.45));
+  animation: loaderWave1 7s ease-in-out infinite;
+}
+.loaderWave2 {
+  bottom: -18%;
+  background: linear-gradient(90deg, rgba(62,207,142,0.35), rgba(91,156,255,0.3), rgba(123,47,255,0.25));
+  animation: loaderWave2 9s ease-in-out infinite;
+  opacity: 0.35;
+}
+.loaderWave3 {
+  bottom: -28%;
+  background: linear-gradient(90deg, rgba(232,93,106,0.2), rgba(254,202,87,0.22), rgba(72,219,251,0.28));
+  animation: loaderWave3 11s ease-in-out infinite;
+  opacity: 0.3;
+}
+
+.loaderCenter {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.loaderRainbowWrap {
+  width: 72px;
+  height: 72px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.loaderRainbow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    #ff6b6b,
+    #feca57,
+    #48dbfb,
+    #1dd1a1,
+    #5f27cd,
+    #ff9ff3,
+    #ff6b6b
+  );
+  animation: loaderSpin 1s linear infinite;
+  box-shadow: 0 0 28px rgba(91,156,255,0.35);
+}
+.loaderRainbowHole {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #05080c;
+  position: relative;
+  z-index: 1;
+}
+
+.loaderBrand {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #e8f0fa;
+  text-shadow: 0 0 24px rgba(91,156,255,0.45);
+}
+
+@keyframes loaderSpin {
+  to { transform: rotate(360deg); }
+}
+@keyframes loaderWave1 {
+  0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
+  50% { transform: translateX(-6%) translateY(-3%) rotate(2deg); }
+}
+@keyframes loaderWave2 {
+  0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
+  50% { transform: translateX(5%) translateY(-2%) rotate(-2deg); }
+}
+@keyframes loaderWave3 {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(-4%) translateY(-4%); }
+}
+
+.viewMount { display: contents; }
+.viewMount.hidden { display: none !important; }

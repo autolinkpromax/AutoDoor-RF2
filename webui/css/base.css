@@ -1,0 +1,70 @@
+* { box-sizing: border-box; }
+body { margin:0; font-family:Tahoma,sans-serif; font-size:16px; background:var(--bg); color:var(--txt); padding-bottom:68px; -webkit-text-size-adjust:100%; text-size-adjust:100%; -webkit-font-smoothing:antialiased; }
+.pill { font-size:11px; padding:4px 10px; border-radius:999px; border:1px solid var(--line); color:var(--muted); }
+main { padding:12px 16px 20px; max-width:520px; margin:0 auto; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; margin-bottom:12px; }
+label { display:block; font-size:12px; color:var(--muted); margin:12px 0 6px; font-weight:500; }
+input, select, button { width:100%; border-radius:12px; border:1px solid var(--line); background:#0a1018; color:var(--txt); padding:12px 14px; font-size:16px; font-family:Tahoma,sans-serif; }
+input[type=range] { padding:8px 0; accent-color:var(--pri); }
+button { cursor:pointer; transition:opacity .15s, transform .08s; }
+button:active { transform:scale(.98); }
+button:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+.row { display:flex; gap:8px; flex-wrap:wrap; }
+.row > * { flex:1; min-width:0; }
+.btnPri { background:linear-gradient(180deg,var(--pri),var(--pri2)); border-color:#5a8fd4; color:#fff; font-weight:600; }
+.btnGhost { background:transparent; }
+.btnStop { background:#2a1216; border-color:#7a2a32; color:#ffc8cd; }
+.btnLock { background:#141a24; }
+.muted { color:var(--muted); font-size:12px; line-height:1.45; }
+.mono { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; word-break:break-all; }
+.nav { position:fixed; bottom:0; left:0; right:0; display:grid; grid-template-columns:1fr 1fr 1fr; background:#0c121a; border-top:1px solid var(--line); padding:8px 0 max(8px, env(safe-area-inset-bottom)); z-index:50; }
+.nav button { border:none; background:transparent; color:var(--muted); font-size:11px; padding:8px 4px; }
+.nav button.on { color:var(--pri); font-weight:600; }
+.hidden { display:none !important; }
+.hint { font-size:12px; color:#c9d6e8; margin-top:6px; min-height:2.6em; }
+.hint.err { color:#ffb4a8; }
+.hint.ok { color:var(--ok); }
+/* devices list page */
+.appChrome { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--line); }
+.appChrome .menuBtn { width:40px; height:40px; border-radius:10px; border:1px solid var(--line); background:#0a1018; color:var(--muted); font-size:18px; padding:0; }
+.appChrome .appTitle { font-size:15px; font-weight:600; margin:0; }
+.btnAddTag { width:100%; padding:14px; border-radius:14px; border:none; background:linear-gradient(180deg,#7eb8ff,#5b9cff); color:#0a1420; font-weight:700; font-size:15px; margin-bottom:14px; box-shadow:0 4px 20px rgba(91,156,255,.25); }
+.nav button.navItem { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.nav button.navItem .navIcon { width:40px; height:32px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.nav button.navItem.on .navIcon { background:rgba(91,156,255,.22); color:var(--pri); }
+
+/* settings + door remote */
+.inpWrap { position:relative; }
+.inpWrap input { padding-right:44px; }
+.inpIcon { position:absolute; right:12px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:18px; pointer-events:none; }
+.pwWrap { position:relative; }
+.pwWrap input { padding-right:44px; }
+.pwToggle { position:absolute; right:4px; top:50%; transform:translateY(-50%); width:36px; height:36px; border:none; border-radius:8px; background:transparent; color:var(--muted); font-size:17px; line-height:1; padding:0; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.pwToggle svg { width:20px; height:20px; display:block; pointer-events:none; }
+.pwToggle:hover { color:var(--txt); background:rgba(255,255,255,.06); }
+.pwToggle:active { opacity:.75; transform:translateY(-50%) scale(.95); }
+.btnSaveDoor { margin-top:20px; display:flex; align-items:center; justify-content:center; gap:8px; }
+.btnCancelDoor { margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--line); background:transparent; }
+.pageKicker { font-size:11px; color:var(--muted); text-align:center; margin:0 0 8px; }
+
+/* state box + animation */
+.stateIcon { font-size:32px; line-height:1; filter:drop-shadow(0 0 8px rgba(91,156,255,.35)); }
+.stateTitle { font-size:15px; font-weight:600; }
+.stateSub { font-size:12px; color:var(--muted); margin-top:4px; }
+
+
+.btnSaveEd { margin-top:20px; width:100%; padding:14px; border-radius:14px; border:none; background:linear-gradient(180deg,#b8d4f8,#9ec0ef); color:#0a1420; font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center; gap:8px; }
+.edMain { max-width:520px; margin:0 auto; padding:0 16px 88px; }
+
+/* แก้ไข Remote (ไม่ใช่หน้ารีโมทประตูหลัก) */
+
+.learn-indicators { display:flex; justify-content:center; gap:10px; margin-top:12px; }
+.learn-dot { width:32px; height:6px; border-radius:3px; background:#1e293b; border:1px solid var(--line); transition:all 0.3s; }
+.learn-dot.active, .learn-dot.on { background:#60a5fa; box-shadow:0 0 10px #60a5fa, 0 0 20px rgba(96,165,250,0.5); border-color:#93c5fd; }
+.learn-dot.success { background:#10b981 !important; box-shadow:0 0 12px #10b981, 0 0 25px rgba(16,185,129,0.8); border-color:#34d399 !important; }
+.liveRxBox { margin-top:8px; border:1px solid var(--line); border-radius:14px; background:#0d141e; padding:14px; }
+.liveRxRssiWrap { display:flex; align-items:baseline; justify-content:center; gap:10px; min-height:96px; padding:16px 10px; margin:10px 0 8px; border-radius:12px; background:linear-gradient(180deg,#1a1008,#120c08); border:1px solid #4a3020; }
+.liveRxRssiNum { font-size:58px; font-weight:800; color:#fb923c; line-height:1; letter-spacing:-.05em; text-shadow:0 0 28px rgba(251,146,60,.45); }
+.liveRxRssiUnit { font-size:20px; font-weight:700; color:#fdba74; margin-bottom:10px; }
+.liveRxCode { font-size:12px; margin-top:4px; word-break:break-all; }
+.liveRxMeta { font-size:11px; margin-top:4px; }
