@@ -84,6 +84,12 @@ function onActionClick(e) {
     case 'copy-ha-blynk':
       copyHaBlynkYaml();
       break;
+    case 'save-wh-out':
+      saveOutboundWebhook();
+      break;
+    case 'test-wh-out':
+      testOutboundWebhook();
+      break;
     case 'dash-filter-events':
       if (typeof setDashEventFilter === 'function') {
         setDashEventFilter(el.dataset.filter);
@@ -245,6 +251,9 @@ function onActionChange(e) {
   switch (action) {
     case 'toggle-ed-sched':
       toggleEdSched();
+      break;
+    case 'toggle-ed-webhook':
+      toggleEdWebhook();
       break;
     case 'toggle-tag-auto':
       toggleTagAuto();

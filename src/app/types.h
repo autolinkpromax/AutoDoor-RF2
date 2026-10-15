@@ -59,6 +59,11 @@ struct Tag {
   int8_t lastRssi = 0;
   float smoothedRssi = -127.0f;
   bool dirty = false;
+  bool webhookEnabled = false;
+  bool webhookOpen = true;
+  bool webhookClosing = true;
+  bool webhookClose = true;
+  String webhookUrl = "";
 };
 
 struct ScheduleEntry {

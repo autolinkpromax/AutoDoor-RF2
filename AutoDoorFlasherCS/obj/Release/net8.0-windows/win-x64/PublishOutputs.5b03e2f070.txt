@@ -1,0 +1,2 @@
+c:\Users\max\Desktop\workplace\AutoDoor-RF2\esp-now\AutoDoorFlasher-Release\AutoDoorFlasher.pdb
+c:\Users\max\Desktop\workplace\AutoDoor-RF2\esp-now\AutoDoorFlasher-Release\AutoDoorFlasher.exe

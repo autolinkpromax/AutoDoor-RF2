@@ -51,6 +51,66 @@ struct TagDiskEntryV2 {
   char icon[16];               // 16 bytes: "auto", "suv", "sedan", "pickup", "bike", "scooter", "van", "rf", "bicycle", "person"
 };
 
+struct TagDiskEntryV3 {
+  uint32_t id;                 // 4 bytes: 32-bit random number (converted to/from 8-char hex string)
+  char name[80];               // 80 bytes: up to 26 UTF-8 Thai characters (or 79 ASCII)
+  uint8_t mac[6];              // 6 bytes: binary MAC address
+  uint8_t isRf;                // 1 byte: 1 for RF, 0 for ESP-NOW
+  uint32_t tagId;              // 4 bytes
+  uint32_t tagHoldMs;          // 4 bytes
+  uint32_t tagCloseDelayMs;    // 4 bytes
+  int8_t tagRssiMin;           // 1 byte
+  uint8_t rfRole;              // 1 byte: 0 = Auto, 1 = HoldOpen, 2 = Close, 3 = Stop
+  uint32_t tagOpenDurationMs;  // 4 bytes: 0 = full open default, >0 = partial open (e.g. motorcycle/pedestrian)
+  uint32_t tagSafetyCloseDelayMs; // 4 bytes
+  char icon[16];               // 16 bytes: "auto", "suv", "sedan", "pickup", "bike", "scooter", "van", "rf", "bicycle", "person"
+  uint8_t scheduleEnabled;     // 1 byte: 0 = disabled (24/7), 1 = enabled
+  uint16_t scheduleStartMin;   // 2 bytes: minute of day (0..1439)
+  uint16_t scheduleEndMin;     // 2 bytes: minute of day (0..1439)
+};
+
+struct TagDiskEntryV4 {
+  uint32_t id;                 // 4 bytes: 32-bit random number (converted to/from 8-char hex string)
+  char name[80];               // 80 bytes: up to 26 UTF-8 Thai characters (or 79 ASCII)
+  uint8_t mac[6];              // 6 bytes: binary MAC address
+  uint8_t isRf;                // 1 byte: 1 for RF, 0 for ESP-NOW
+  uint32_t tagId;              // 4 bytes
+  uint32_t tagHoldMs;          // 4 bytes
+  uint32_t tagCloseDelayMs;    // 4 bytes
+  int8_t tagRssiMin;           // 1 byte
+  uint8_t rfRole;              // 1 byte: 0 = Auto, 1 = HoldOpen, 2 = Close, 3 = Stop
+  uint32_t tagOpenDurationMs;  // 4 bytes: 0 = full open default, >0 = partial open (e.g. motorcycle/pedestrian)
+  uint32_t tagSafetyCloseDelayMs; // 4 bytes
+  char icon[16];               // 16 bytes: "auto", "suv", "sedan", "pickup", "bike", "scooter", "van", "rf", "bicycle", "person"
+  uint8_t scheduleEnabled;     // 1 byte: 0 = disabled (24/7), 1 = enabled
+  uint16_t scheduleStartMin;   // 2 bytes: minute of day (0..1439)
+  uint16_t scheduleEndMin;     // 2 bytes: minute of day (0..1439)
+  uint8_t webhookEnabled;      // 1 byte: 0 = disabled, 1 = enabled
+  char webhookUrl[96];         // 96 bytes: custom topic or URL
+};
+
+struct TagDiskEntryV5 {
+  uint32_t id;                 // 4 bytes: 32-bit random number (converted to/from 8-char hex string)
+  char name[80];               // 80 bytes: up to 26 UTF-8 Thai characters (or 79 ASCII)
+  uint8_t mac[6];              // 6 bytes: binary MAC address
+  uint8_t isRf;                // 1 byte: 1 for RF, 0 for ESP-NOW
+  uint32_t tagId;              // 4 bytes
+  uint32_t tagHoldMs;          // 4 bytes
+  uint32_t tagCloseDelayMs;    // 4 bytes
+  int8_t tagRssiMin;           // 1 byte
+  uint8_t rfRole;              // 1 byte: 0 = Auto, 1 = HoldOpen, 2 = Close, 3 = Stop
+  uint32_t tagOpenDurationMs;  // 4 bytes: 0 = full open default, >0 = partial open (e.g. motorcycle/pedestrian)
+  uint32_t tagSafetyCloseDelayMs; // 4 bytes
+  char icon[16];               // 16 bytes: "auto", "suv", "sedan", "pickup", "bike", "scooter", "van", "rf", "bicycle", "person"
+  uint8_t scheduleEnabled;     // 1 byte: 0 = disabled (24/7), 1 = enabled
+  uint16_t scheduleStartMin;   // 2 bytes: minute of day (0..1439)
+  uint16_t scheduleEndMin;     // 2 bytes: minute of day (0..1439)
+  uint8_t webhookEnabled;      // 1 byte: 0 = disabled, 1 = enabled
+  uint8_t webhookOpen;         // 1 byte: 0 = disabled, 1 = enabled
+  uint8_t webhookClose;        // 1 byte: 0 = disabled, 1 = enabled
+  char webhookUrl[96];         // 96 bytes: custom topic or URL
+};
+
 struct TagDiskEntry {
   uint32_t id;                 // 4 bytes: 32-bit random number (converted to/from 8-char hex string)
   char name[80];               // 80 bytes: up to 26 UTF-8 Thai characters (or 79 ASCII)
@@ -67,6 +127,11 @@ struct TagDiskEntry {
   uint8_t scheduleEnabled;     // 1 byte: 0 = disabled (24/7), 1 = enabled
   uint16_t scheduleStartMin;   // 2 bytes: minute of day (0..1439)
   uint16_t scheduleEndMin;     // 2 bytes: minute of day (0..1439)
+  uint8_t webhookEnabled;      // 1 byte: 0 = disabled, 1 = enabled
+  uint8_t webhookOpen;         // 1 byte: 0 = disabled, 1 = enabled
+  uint8_t webhookClosing;      // 1 byte: 0 = disabled, 1 = enabled
+  uint8_t webhookClose;        // 1 byte: 0 = disabled, 1 = enabled
+  char webhookUrl[96];         // 96 bytes: custom topic or URL
 };
 #pragma pack(pop)
 
@@ -532,7 +597,12 @@ bool TagRegistry::update(const String& id, const String& name, uint32_t tagHoldM
                          const String& icon,
                          bool scheduleEnabled,
                          uint16_t scheduleStartMin,
-                         uint16_t scheduleEndMin) {
+                         uint16_t scheduleEndMin,
+                         bool webhookEnabled,
+                         bool webhookOpen,
+                         bool webhookClosing,
+                         bool webhookClose,
+                         const String& webhookUrl) {
   TagStoreLock lock;
   // Use no-lock helper: lock is already acquired above
   Tag* t = _findByIdNoLock(parseId(id));
@@ -553,6 +623,11 @@ bool TagRegistry::update(const String& id, const String& name, uint32_t tagHoldM
   if (t->scheduleEnabled != scheduleEnabled) { t->scheduleEnabled = scheduleEnabled; changed = true; }
   if (t->scheduleStartMin != scheduleStartMin) { t->scheduleStartMin = scheduleStartMin; changed = true; }
   if (t->scheduleEndMin != scheduleEndMin) { t->scheduleEndMin = scheduleEndMin; changed = true; }
+  if (t->webhookEnabled != webhookEnabled) { t->webhookEnabled = webhookEnabled; changed = true; }
+  if (t->webhookOpen != webhookOpen) { t->webhookOpen = webhookOpen; changed = true; }
+  if (t->webhookClosing != webhookClosing) { t->webhookClosing = webhookClosing; changed = true; }
+  if (t->webhookClose != webhookClose) { t->webhookClose = webhookClose; changed = true; }
+  if (t->webhookUrl != webhookUrl) { t->webhookUrl = webhookUrl; changed = true; }
 
   if (changed) {
     t->dirty = true;
@@ -717,6 +792,161 @@ void TagRegistry::loadFromPrefs() {
         t.scheduleEnabled = (entry.scheduleEnabled != 0);
         t.scheduleStartMin = entry.scheduleStartMin;
         t.scheduleEndMin = (entry.scheduleEndMin == 0 && entry.scheduleStartMin == 0 && !t.scheduleEnabled) ? 1439 : entry.scheduleEndMin;
+        t.webhookEnabled = (entry.webhookEnabled != 0);
+        t.webhookOpen = (entry.webhookOpen != 0);
+        t.webhookClosing = (entry.webhookClosing != 0);
+        t.webhookClose = (entry.webhookClose != 0);
+        char whBuf[97];
+        memcpy(whBuf, entry.webhookUrl, 96);
+        whBuf[96] = '\0';
+        t.webhookUrl = String(whBuf);
+
+        _tags.push_back(t);
+      } else if (tagLen == sizeof(TagDiskEntryV5)) {
+        TagDiskEntryV5 entryV5;
+        gPrefs.getBytes(key, &entryV5, sizeof(TagDiskEntryV5));
+
+        Tag t;
+        char idBuf[16];
+        snprintf(idBuf, sizeof(idBuf), "%08lx", (unsigned long)entryV5.id);
+        t.id = String(idBuf);
+
+        char nameBuf[81];
+        memcpy(nameBuf, entryV5.name, 80);
+        nameBuf[80] = '\0';
+        t.name = String(nameBuf);
+
+        memcpy(t.macBin, entryV5.mac, 6);
+        if (entryV5.isRf) {
+          char macBuf[24];
+          snprintf(macBuf, sizeof(macBuf), "RF:%02X:%02X:%02X:%02X:%02X", entryV5.mac[1], entryV5.mac[2], entryV5.mac[3], entryV5.mac[4], entryV5.mac[5]);
+          t.mac = String(macBuf);
+        } else {
+          t.mac = macToString(t.macBin);
+        }
+
+        t.tagId = entryV5.tagId;
+        t.tagHoldMs = entryV5.isRf ? kDefaultRfTagHoldMs : ((entryV5.tagHoldMs > 0) ? entryV5.tagHoldMs : kDefaultTagHoldMs);
+        t.tagCloseDelayMs = entryV5.tagCloseDelayMs;
+        t.tagRssiMin = entryV5.tagRssiMin;
+        t.tagSafetyCloseDelayMs = entryV5.tagSafetyCloseDelayMs;
+        t.tagOpenDurationMs = entryV5.tagOpenDurationMs;
+        t.rfRole = entryV5.rfRole;
+
+        char iconBuf[17];
+        memcpy(iconBuf, entryV5.icon, 16);
+        iconBuf[16] = '\0';
+        t.icon = String(iconBuf);
+
+        t.scheduleEnabled = (entryV5.scheduleEnabled != 0);
+        t.scheduleStartMin = entryV5.scheduleStartMin;
+        t.scheduleEndMin = (entryV5.scheduleEndMin == 0 && entryV5.scheduleStartMin == 0 && !t.scheduleEnabled) ? 1439 : entryV5.scheduleEndMin;
+        t.webhookEnabled = (entryV5.webhookEnabled != 0);
+        t.webhookOpen = (entryV5.webhookOpen != 0);
+        t.webhookClosing = true;
+        t.webhookClose = (entryV5.webhookClose != 0);
+        char whBuf[97];
+        memcpy(whBuf, entryV5.webhookUrl, 96);
+        whBuf[96] = '\0';
+        t.webhookUrl = String(whBuf);
+        t.dirty = true;
+
+        _tags.push_back(t);
+      } else if (tagLen == sizeof(TagDiskEntryV4)) {
+        TagDiskEntryV4 entryV4;
+        gPrefs.getBytes(key, &entryV4, sizeof(TagDiskEntryV4));
+
+        Tag t;
+        char idBuf[16];
+        snprintf(idBuf, sizeof(idBuf), "%08lx", (unsigned long)entryV4.id);
+        t.id = String(idBuf);
+
+        char nameBuf[81];
+        memcpy(nameBuf, entryV4.name, 80);
+        nameBuf[80] = '\0';
+        t.name = String(nameBuf);
+
+        memcpy(t.macBin, entryV4.mac, 6);
+        if (entryV4.isRf) {
+          char macBuf[24];
+          snprintf(macBuf, sizeof(macBuf), "RF:%02X:%02X:%02X:%02X:%02X", entryV4.mac[1], entryV4.mac[2], entryV4.mac[3], entryV4.mac[4], entryV4.mac[5]);
+          t.mac = String(macBuf);
+        } else {
+          t.mac = macToString(t.macBin);
+        }
+
+        t.tagId = entryV4.tagId;
+        t.tagHoldMs = entryV4.isRf ? kDefaultRfTagHoldMs : ((entryV4.tagHoldMs > 0) ? entryV4.tagHoldMs : kDefaultTagHoldMs);
+        t.tagCloseDelayMs = entryV4.tagCloseDelayMs;
+        t.tagRssiMin = entryV4.tagRssiMin;
+        t.tagSafetyCloseDelayMs = entryV4.tagSafetyCloseDelayMs;
+        t.tagOpenDurationMs = entryV4.tagOpenDurationMs;
+        t.rfRole = entryV4.rfRole;
+
+        char iconBuf[17];
+        memcpy(iconBuf, entryV4.icon, 16);
+        iconBuf[16] = '\0';
+        t.icon = String(iconBuf);
+
+        t.scheduleEnabled = (entryV4.scheduleEnabled != 0);
+        t.scheduleStartMin = entryV4.scheduleStartMin;
+        t.scheduleEndMin = (entryV4.scheduleEndMin == 0 && entryV4.scheduleStartMin == 0 && !t.scheduleEnabled) ? 1439 : entryV4.scheduleEndMin;
+        t.webhookEnabled = (entryV4.webhookEnabled != 0);
+        t.webhookOpen = true;
+        t.webhookClosing = true;
+        t.webhookClose = true;
+        char whBuf[97];
+        memcpy(whBuf, entryV4.webhookUrl, 96);
+        whBuf[96] = '\0';
+        t.webhookUrl = String(whBuf);
+        t.dirty = true;
+
+        _tags.push_back(t);
+      } else if (tagLen == sizeof(TagDiskEntryV3)) {
+        TagDiskEntryV3 entryV3;
+        gPrefs.getBytes(key, &entryV3, sizeof(TagDiskEntryV3));
+
+        Tag t;
+        char idBuf[16];
+        snprintf(idBuf, sizeof(idBuf), "%08lx", (unsigned long)entryV3.id);
+        t.id = String(idBuf);
+
+        char nameBuf[81];
+        memcpy(nameBuf, entryV3.name, 80);
+        nameBuf[80] = '\0';
+        t.name = String(nameBuf);
+
+        memcpy(t.macBin, entryV3.mac, 6);
+        if (entryV3.isRf) {
+          char macBuf[24];
+          snprintf(macBuf, sizeof(macBuf), "RF:%02X:%02X:%02X:%02X:%02X", entryV3.mac[1], entryV3.mac[2], entryV3.mac[3], entryV3.mac[4], entryV3.mac[5]);
+          t.mac = String(macBuf);
+        } else {
+          t.mac = macToString(t.macBin);
+        }
+
+        t.tagId = entryV3.tagId;
+        t.tagHoldMs = entryV3.isRf ? kDefaultRfTagHoldMs : ((entryV3.tagHoldMs > 0) ? entryV3.tagHoldMs : kDefaultTagHoldMs);
+        t.tagCloseDelayMs = entryV3.tagCloseDelayMs;
+        t.tagRssiMin = entryV3.tagRssiMin;
+        t.tagSafetyCloseDelayMs = entryV3.tagSafetyCloseDelayMs;
+        t.tagOpenDurationMs = entryV3.tagOpenDurationMs;
+        t.rfRole = entryV3.rfRole;
+
+        char iconBuf[17];
+        memcpy(iconBuf, entryV3.icon, 16);
+        iconBuf[16] = '\0';
+        t.icon = String(iconBuf);
+
+        t.scheduleEnabled = (entryV3.scheduleEnabled != 0);
+        t.scheduleStartMin = entryV3.scheduleStartMin;
+        t.scheduleEndMin = (entryV3.scheduleEndMin == 0 && entryV3.scheduleStartMin == 0 && !t.scheduleEnabled) ? 1439 : entryV3.scheduleEndMin;
+        t.webhookEnabled = true;
+        t.webhookOpen = true;
+        t.webhookClosing = true;
+        t.webhookClose = true;
+        t.webhookUrl = "";
+        t.dirty = true;
 
         _tags.push_back(t);
       } else if (tagLen == sizeof(TagDiskEntryV2)) {
@@ -874,6 +1104,57 @@ void TagRegistry::loadFromPrefs() {
         t.tagSafetyCloseDelayMs = kDefaultTagSafetyCloseDelayMs;
         t.dirty = true;
         _tags.push_back(t);
+      } else if (tagLen >= sizeof(TagDiskEntryV1)) {
+        // Safe generic fallback for any unknown size >= 109 bytes
+        TagDiskEntry fallback = {};
+        fallback.webhookEnabled = 1;
+        fallback.webhookOpen = 1;
+        fallback.webhookClosing = 1;
+        fallback.webhookClose = 1;
+        size_t readLen = (tagLen > sizeof(TagDiskEntry)) ? sizeof(TagDiskEntry) : tagLen;
+        gPrefs.getBytes(key, &fallback, readLen);
+
+        Tag t;
+        char idBuf[16];
+        snprintf(idBuf, sizeof(idBuf), "%08lx", (unsigned long)fallback.id);
+        t.id = String(idBuf);
+        char nameBuf[81];
+        memcpy(nameBuf, fallback.name, 80);
+        nameBuf[80] = '\0';
+        t.name = String(nameBuf);
+        memcpy(t.macBin, fallback.mac, 6);
+        if (fallback.isRf) {
+          char macBuf[24];
+          snprintf(macBuf, sizeof(macBuf), "RF:%02X:%02X:%02X:%02X:%02X", fallback.mac[1], fallback.mac[2], fallback.mac[3], fallback.mac[4], fallback.mac[5]);
+          t.mac = String(macBuf);
+        } else {
+          t.mac = macToString(t.macBin);
+        }
+        t.tagId = fallback.tagId;
+        t.tagHoldMs = fallback.isRf ? kDefaultRfTagHoldMs : ((fallback.tagHoldMs > 0) ? fallback.tagHoldMs : kDefaultTagHoldMs);
+        t.tagCloseDelayMs = fallback.tagCloseDelayMs;
+        t.tagRssiMin = fallback.tagRssiMin;
+        t.tagSafetyCloseDelayMs = (fallback.tagSafetyCloseDelayMs > 0) ? fallback.tagSafetyCloseDelayMs : kDefaultTagSafetyCloseDelayMs;
+        t.tagOpenDurationMs = fallback.tagOpenDurationMs;
+        t.rfRole = fallback.rfRole;
+        char iconBuf[17];
+        memcpy(iconBuf, fallback.icon, 16);
+        iconBuf[16] = '\0';
+        t.icon = String(iconBuf);
+        t.scheduleEnabled = (fallback.scheduleEnabled != 0);
+        t.scheduleStartMin = fallback.scheduleStartMin;
+        t.scheduleEndMin = (fallback.scheduleEndMin == 0 && fallback.scheduleStartMin == 0 && !t.scheduleEnabled) ? 1439 : fallback.scheduleEndMin;
+        t.webhookEnabled = (fallback.webhookEnabled != 0);
+        t.webhookOpen = (fallback.webhookOpen != 0);
+        t.webhookClosing = (fallback.webhookClosing != 0);
+        t.webhookClose = (fallback.webhookClose != 0);
+        char whBuf[97];
+        memcpy(whBuf, fallback.webhookUrl, 96);
+        whBuf[96] = '\0';
+        t.webhookUrl = String(whBuf);
+        t.dirty = true;
+        _tags.push_back(t);
+        Serial.printf("[tag_store] Recovered tag %s via generic fallback (tagLen=%u)\n", t.id.c_str(), (unsigned int)tagLen);
       }
     }
     rebuildIndexes();
@@ -1028,6 +1309,12 @@ void TagRegistry::saveToPrefs() {
       entry.scheduleEnabled = t.scheduleEnabled ? 1 : 0;
       entry.scheduleStartMin = t.scheduleStartMin;
       entry.scheduleEndMin = t.scheduleEndMin;
+      entry.webhookEnabled = t.webhookEnabled ? 1 : 0;
+      entry.webhookOpen = t.webhookOpen ? 1 : 0;
+      entry.webhookClosing = t.webhookClosing ? 1 : 0;
+      entry.webhookClose = t.webhookClose ? 1 : 0;
+      strncpy(entry.webhookUrl, t.webhookUrl.c_str(), sizeof(entry.webhookUrl) - 1);
+      entry.webhookUrl[sizeof(entry.webhookUrl) - 1] = '\0';
 
       char key[16];
       snprintf(key, sizeof(key), "t_%08lx", (unsigned long)idVal);

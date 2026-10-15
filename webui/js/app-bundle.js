@@ -132,6 +132,7 @@ async function api(path, opts = {}) {
 
   try {
     const res = await fetch(path, {
+      cache: 'no-store',
       credentials: 'same-origin',
       headers: opts.body ? { 'Content-Type': 'application/json' } : undefined,
       signal: opts.signal || controller.signal,
@@ -393,6 +394,12 @@ function onActionClick(e) {
     case 'copy-ha-blynk':
       copyHaBlynkYaml();
       break;
+    case 'save-wh-out':
+      saveOutboundWebhook();
+      break;
+    case 'test-wh-out':
+      testOutboundWebhook();
+      break;
     case 'dash-filter-events':
       if (typeof setDashEventFilter === 'function') {
         setDashEventFilter(el.dataset.filter);
@@ -554,6 +561,9 @@ function onActionChange(e) {
   switch (action) {
     case 'toggle-ed-sched':
       toggleEdSched();
+      break;
+    case 'toggle-ed-webhook':
+      toggleEdWebhook();
       break;
     case 'toggle-tag-auto':
       toggleTagAuto();
@@ -1890,7 +1900,7 @@ async function refreshTagList() {
 }
 
 function deviceListKey(tags) {
-  return tags.map((t) => `${t.id}:${t.name}:${t.icon || ''}:${t.active ? 1 : 0}:${t.tagOpenDurationMs}:${t.tagCloseDelayMs}:${t.tagSafetyCloseDelayMs}:${t.tagHoldMs}:${t.rfRole || 0}:${t.scheduleEnabled ? 1 : 0}:${t.scheduleStartMin}:${t.scheduleEndMin}`).join('|');
+  return tags.map((t) => `${t.id}:${t.name}:${t.icon || ''}:${t.active ? 1 : 0}:${t.tagOpenDurationMs}:${t.tagCloseDelayMs}:${t.tagSafetyCloseDelayMs}:${t.tagHoldMs}:${t.rfRole || 0}:${t.scheduleEnabled ? 1 : 0}:${t.scheduleStartMin}:${t.scheduleEndMin}:${t.webhookEnabled === false ? 0 : 1}:${t.webhookOpen === false ? 0 : 1}:${t.webhookClosing === false ? 0 : 1}:${t.webhookClose === false ? 0 : 1}:${t.webhookUrl || ''}`).join('|');
 }
 
 function getTagParamText(t) {
@@ -1909,25 +1919,39 @@ function getTagParamText(t) {
     ? ` · <span style="color:#38bdf8;font-weight:500;" title="จำกัดเวลาใช้งาน">🕒 ${formatMin(t.scheduleStartMin || 0)}-${formatMin(t.scheduleEndMin != null ? t.scheduleEndMin : 1439)}</span>`
     : '';
 
+  let whBadge = '';
+  if (t.webhookEnabled === false || (t.webhookOpen === false && t.webhookClosing === false && t.webhookClose === false)) {
+    whBadge = ` · <span style="color:#64748b;" title="ปิดแจ้งเตือน">🔕 ไม่แจ้งเตือน</span>`;
+  } else if (t.webhookUrl) {
+    const isLine = t.webhookUrl.startsWith('U') || t.webhookUrl.startsWith('C') || t.webhookUrl.startsWith('R') || t.webhookUrl.startsWith('line:');
+    const badgeIcon = isLine ? '💬' : '🔔';
+    const evs = [];
+    if (t.webhookOpen !== false) evs.push('เปิด');
+    if (t.webhookClosing !== false) evs.push('กำลังปิด');
+    if (t.webhookClose !== false) evs.push('ปิด');
+    const evText = evs.join('+');
+    whBadge = ` · <span style="color:${isLine ? '#4ade80' : '#a78bfa'};font-weight:500;" title="${isLine ? 'LINE ID' : 'Webhook'}: ${escHtml(t.webhookUrl)}">${badgeIcon} ${escHtml(t.webhookUrl)} (${evText})</span>`;
+  }
+
   if (t.active) {
     const remMs = (typeof t.holdRemainingMs === 'number' && t.holdRemainingMs > 0)
       ? t.holdRemainingMs
       : (isRf ? 1000 : (t.tagHoldMs || 2000));
     const remSec = Math.max(0.1, (remMs / 1000)).toFixed(1);
     return isRf
-      ? `<span style="color:#10b981;font-weight:600;">🟢 ส่งสัญญาณ (ทำงานอีก ${remSec} วิ)</span>${schedBadge}`
-      : `<span style="color:#10b981;font-weight:600;">🟢 กำลังทำงาน (จะหายใน ${remSec} วิ)</span>${schedBadge}`;
+      ? `<span style="color:#10b981;font-weight:600;">🟢 ส่งสัญญาณ (ทำงานอีก ${remSec} วิ)</span>${schedBadge}${whBadge}`
+      : `<span style="color:#10b981;font-weight:600;">🟢 กำลังทำงาน (จะหายใน ${remSec} วิ)</span>${schedBadge}${whBadge}`;
   }
 
   const openPrefix = openSec > 0 ? `เปิดช่อง ${openSec} วิ · รอ ${closeDelaySec} วิ` : `หน่วงปิด ${closeDelaySec} วิ`;
   if (isRf) {
-    if (t.rfRole === 1) return `<span style="color:#fbbf24;font-weight:500;">🟡 หน้าที่: เปิดค้าง (Hold Open)</span>${schedBadge}`;
-    if (t.rfRole === 2) return `<span style="color:#f87171;font-weight:500;">🔴 หน้าที่: สั่งปิดประตูทันที</span>${schedBadge}`;
-    if (t.rfRole === 3) return `<span style="color:#9ca3af;font-weight:500;">⏹️ หน้าที่: สั่งหยุดมอเตอร์</span>${schedBadge}`;
-    if (t.rfRole === 4) return `${openPrefix} · กันหนีบ ${safetyCloseSec} วิ · <span style="color:#10b981;font-weight:500;">🟢 เปิดอย่างเดียว (Auto/Open)</span>${schedBadge}`;
-    return `${openPrefix} · กันหนีบ ${safetyCloseSec} วิ · <span style="color:#34d399;">🟢 เปิดออโต้ (Auto/Toggle)</span>${schedBadge}`;
+    if (t.rfRole === 1) return `<span style="color:#fbbf24;font-weight:500;">🟡 หน้าที่: เปิดค้าง (Hold Open)</span>${schedBadge}${whBadge}`;
+    if (t.rfRole === 2) return `<span style="color:#f87171;font-weight:500;">🔴 หน้าที่: สั่งปิดประตูทันที</span>${schedBadge}${whBadge}`;
+    if (t.rfRole === 3) return `<span style="color:#9ca3af;font-weight:500;">⏹️ หน้าที่: สั่งหยุดมอเตอร์</span>${schedBadge}${whBadge}`;
+    if (t.rfRole === 4) return `${openPrefix} · กันหนีบ ${safetyCloseSec} วิ · <span style="color:#10b981;font-weight:500;">🟢 เปิดอย่างเดียว (Auto/Open)</span>${schedBadge}${whBadge}`;
+    return `${openPrefix} · กันหนีบ ${safetyCloseSec} วิ · <span style="color:#34d399;">🟢 เปิดออโต้ (Auto/Toggle)</span>${schedBadge}${whBadge}`;
   }
-  return `${openPrefix} · กันหนีบ ${safetyCloseSec} วิ · หายใน ${holdSec} วิ${schedBadge}`;
+  return `${openPrefix} · กันหนีบ ${safetyCloseSec} วิ · หายใน ${holdSec} วิ${schedBadge}${whBadge}`;
 }
 
 function buildDeviceCardHtml(t) {
@@ -2048,6 +2072,14 @@ function toggleEdSched() {
   }
 }
 
+function toggleEdWebhook() {
+  const chk = $('edWebhookEnabled');
+  const body = $('edWebhookBody');
+  if (chk && body) {
+    body.classList.toggle('hidden', !chk.checked);
+  }
+}
+
 function selectIconChip(iconVal) {
   const target = iconVal || 'auto';
   const hiddenInput = $('edTagIcon');
@@ -2078,6 +2110,13 @@ function setEditorDefaults() {
   if ($('edSchedStart')) $('edSchedStart').value = '08:00';
   if ($('edSchedEnd')) $('edSchedEnd').value = '17:00';
   toggleEdSched();
+  const whChk = $('edWebhookEnabled');
+  if (whChk) whChk.checked = false;
+  if ($('edWebhookOpen')) $('edWebhookOpen').checked = true;
+  if ($('edWebhookClosing')) $('edWebhookClosing').checked = true;
+  if ($('edWebhookClose')) $('edWebhookClose').checked = true;
+  if ($('edWebhookUrl')) $('edWebhookUrl').value = '';
+  toggleEdWebhook();
   selectIconChip('auto');
   updateEdRssiLbl();
   updateEdSafetyDelayWarn();
@@ -2144,6 +2183,14 @@ async function openEditor(id) {
     if ($('edSchedStart')) $('edSchedStart').value = formatMin(startMin);
     if ($('edSchedEnd')) $('edSchedEnd').value = formatMin(endMin);
     toggleEdSched();
+
+    const whEnabled = !!t.webhookEnabled;
+    if ($('edWebhookEnabled')) $('edWebhookEnabled').checked = whEnabled;
+    if ($('edWebhookOpen')) $('edWebhookOpen').checked = (t.webhookOpen !== false);
+    if ($('edWebhookClosing')) $('edWebhookClosing').checked = (t.webhookClosing !== false);
+    if ($('edWebhookClose')) $('edWebhookClose').checked = (t.webhookClose !== false);
+    if ($('edWebhookUrl')) $('edWebhookUrl').value = t.webhookUrl || '';
+    toggleEdWebhook();
 
     selectIconChip(t.icon || 'auto');
     
@@ -2236,6 +2283,11 @@ async function saveEditor() {
   const schedEnabled = !!$('edSchedEnabled')?.checked;
   const schedStartMin = parseMin($('edSchedStart')?.value, 0);
   const schedEndMin = parseMin($('edSchedEnd')?.value, 1439);
+  const webhookEnabled = !!$('edWebhookEnabled')?.checked;
+  const webhookOpen = !!$('edWebhookOpen')?.checked;
+  const webhookClosing = !!$('edWebhookClosing')?.checked;
+  const webhookClose = !!$('edWebhookClose')?.checked;
+  const webhookUrl = $('edWebhookUrl')?.value?.trim() || '';
 
   const body = {
     name,
@@ -2249,6 +2301,11 @@ async function saveEditor() {
     scheduleEnabled: schedEnabled,
     scheduleStartMin: schedStartMin,
     scheduleEndMin: schedEndMin,
+    webhookEnabled,
+    webhookOpen,
+    webhookClosing,
+    webhookClose,
+    webhookUrl,
   };
   try {
     const tagId = State.editingId;
@@ -2805,6 +2862,18 @@ async function loadWebhookUi() {
     State.webhookCache = await api('/api/webhook');
     const hint = $('hookHostHint');
     if (hint) hint.textContent = 'http://' + (State.webhookCache.host || '—');
+
+    const out = State.webhookCache?.outbound;
+    if (out) {
+      if ($('swWhOut')) $('swWhOut').checked = !!out.enabled;
+      if ($('whOutUrl')) $('whOutUrl').value = out.url || '';
+      if ($('swWhLine')) $('swWhLine').checked = !!out.lineEnabled;
+      if ($('whLineToken')) $('whLineToken').value = out.lineToken || '';
+      if ($('whLineTarget')) $('whLineTarget').value = out.lineTargetId || '';
+      if ($('chkWhSafety')) $('chkWhSafety').checked = out.eventSafety !== false;
+      if ($('chkWhOpenDuration')) $('chkWhOpenDuration').checked = out.eventOpenDuration !== false;
+      if ($('whOpenDurationMin')) $('whOpenDurationMin').value = out.openDurationMinutes || 5;
+    }
   } catch (_) {
     State.webhookCache = null;
   }
@@ -3068,6 +3137,84 @@ function buildJsonApiString() {
 async function copyJsonApi() {
   if (!State.webhookCache) await loadWebhookUi();
   await copyHookText(buildJsonApiString(), 'คัดลอก JSON ควบคุมและสถานะเรียบร้อยแล้ว');
+}
+
+async function saveOutboundWebhook() {
+  const enabled = !!$('swWhOut')?.checked;
+  const lineEnabled = !!$('swWhLine')?.checked;
+  const lineToken = $('whLineToken')?.value?.trim() || '';
+  const lineTargetId = $('whLineTarget')?.value?.trim() || '';
+  const eventSafety = !!$('chkWhSafety')?.checked;
+  const eventOpenDuration = !!$('chkWhOpenDuration')?.checked;
+  const openDurationMinutes = Math.max(1, Math.min(60, parseInt($('whOpenDurationMin')?.value, 10) || 5));
+
+  if (lineEnabled && !lineToken) {
+    setHint('whOutMsg', 'hint err', 'กรุณาระบุ LINE Channel Access Token หรือปิดสวิตช์ LINE');
+    return;
+  }
+
+  try {
+    setHint('whOutMsg', 'hint', 'กำลังบันทึก...');
+    const body = {
+      enabled,
+      lineEnabled,
+      lineToken,
+      lineTargetId,
+      eventSafety,
+      eventOpenDuration,
+      openDurationMinutes
+    };
+    if ($('whOutUrl')) {
+      body.url = $('whOutUrl').value.trim();
+    }
+    const res = await api('/api/webhook', {
+      method: 'POST',
+      body
+    });
+    if (res.ok) {
+      setHint('whOutMsg', 'hint ok', 'บันทึกการตั้งค่าระบบแจ้งเตือนเรียบร้อย');
+      await loadWebhookUi();
+    } else {
+      setHint('whOutMsg', 'hint err', 'บันทึกไม่สำเร็จ: ' + (res.error || 'error'));
+    }
+  } catch (e) {
+    setHint('whOutMsg', 'hint err', 'บันทึกไม่สำเร็จ: ' + e.message);
+  }
+}
+
+async function testOutboundWebhook() {
+  const enabled = !!$('swWhOut')?.checked;
+  const lineEnabled = !!$('swWhLine')?.checked;
+  const lineToken = $('whLineToken')?.value?.trim() || '';
+  const lineTargetId = $('whLineTarget')?.value?.trim() || '';
+
+  try {
+    setHint('whOutMsg', 'hint', 'กำลังส่งข้อความทดสอบ...');
+    const body = {
+      enabled,
+      lineEnabled,
+      lineToken,
+      lineTargetId,
+      eventSafety: !!$('chkWhSafety')?.checked,
+      eventOpenDuration: !!$('chkWhOpenDuration')?.checked,
+      openDurationMinutes: Math.max(1, Math.min(60, parseInt($('whOpenDurationMin')?.value, 10) || 5))
+    };
+    if ($('whOutUrl')) {
+      body.url = $('whOutUrl').value.trim();
+    }
+    await api('/api/webhook', {
+      method: 'POST',
+      body
+    });
+    const res = await api('/api/webhook/test', { method: 'POST' });
+    if (res.ok) {
+      setHint('whOutMsg', 'hint ok', 'ส่งข้อความทดสอบเข้าคิวแล้ว');
+    } else {
+      setHint('whOutMsg', 'hint err', 'ส่งไม่สำเร็จ: ' + (res.msg || 'error'));
+    }
+  } catch (e) {
+    setHint('whOutMsg', 'hint err', 'เกิดข้อผิดพลาด: ' + e.message);
+  }
 }
 function toggleSetupWizard() {
   State.setupWizardOpen = !State.setupWizardOpen;

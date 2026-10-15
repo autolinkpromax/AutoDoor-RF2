@@ -85,3 +85,12 @@
 .slotDots { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
 .dot { font-size:11px; padding:4px 8px; border-radius:8px; border:1px solid var(--line); color:var(--muted); }
 .dot.ok { border-color:var(--ok); color:var(--ok); }
+
+.edEvTile { display:flex; align-items:center; gap:12px; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; cursor:pointer; user-select:none; transition:all 0.15s ease; }
+.edEvTile:hover { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.15); }
+.edEvTile input[type=checkbox] { width:18px !important; height:18px !important; min-width:18px !important; max-width:18px !important; margin:0 !important; padding:0 !important; flex-shrink:0 !important; accent-color:var(--pri, #3b82f6); cursor:pointer; }
+.edEvTile .edEvIco { font-size:18px; line-height:1; flex-shrink:0; }
+.edEvTile .edEvMain { flex:1; min-width:0; }
+.edEvTile .edEvTitle { font-size:13px; font-weight:600; color:#fff; }
+.edEvTile .edEvSub { font-size:11px; color:#8b95a5; margin-top:2px; }
+

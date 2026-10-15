@@ -68,6 +68,11 @@ void TagsApiController::handleTagsList() {
     o["scheduleEnabled"] = t.scheduleEnabled;
     o["scheduleStartMin"] = t.scheduleStartMin;
     o["scheduleEndMin"] = t.scheduleEndMin;
+    o["webhookEnabled"] = t.webhookEnabled;
+    o["webhookOpen"] = t.webhookOpen;
+    o["webhookClosing"] = t.webhookClosing;
+    o["webhookClose"] = t.webhookClose;
+    o["webhookUrl"] = t.webhookUrl;
     o["active"] = active;
     o["lastRssi"] = (int)t.lastRssi;
     o["rssiZone"] = tagRssiZone(t, now, active);
@@ -142,8 +147,13 @@ void TagsApiController::handleTagsCreate() {
   const bool schedEnabled = body["scheduleEnabled"] | false;
   const uint16_t schedStart = (uint16_t)constrain((int)(body["scheduleStartMin"] | 0), 0, 1439);
   const uint16_t schedEnd = (uint16_t)constrain((int)(body["scheduleEndMin"] | 1439), 0, 1439);
+  const bool whEnabled = body["webhookEnabled"].isNull() ? false : body["webhookEnabled"].as<bool>();
+  const bool whOpen = body["webhookOpen"].isNull() ? true : body["webhookOpen"].as<bool>();
+  const bool whClosing = body["webhookClosing"].isNull() ? true : body["webhookClosing"].as<bool>();
+  const bool whClose = body["webhookClose"].isNull() ? true : body["webhookClose"].as<bool>();
+  const String whUrl = body["webhookUrl"].isNull() ? "" : String((const char*)body["webhookUrl"]);
   updateTag(t->id, name, hold, closeDelay, rssi, safetyClose, openDuration, rfRole, icon,
-            schedEnabled, schedStart, schedEnd);
+            schedEnabled, schedStart, schedEnd, whEnabled, whOpen, whClosing, whClose, whUrl);
   syncEspNowPeers();
   saveTagsToPrefs();
   JsonDocument doc;
@@ -175,8 +185,13 @@ void TagsApiController::handleTagUpdate() {
   const bool schedEnabled = body["scheduleEnabled"].isNull() ? t->scheduleEnabled : body["scheduleEnabled"].as<bool>();
   const uint16_t schedStart = body["scheduleStartMin"].isNull() ? t->scheduleStartMin : (uint16_t)constrain((int)body["scheduleStartMin"].as<int>(), 0, 1439);
   const uint16_t schedEnd = body["scheduleEndMin"].isNull() ? t->scheduleEndMin : (uint16_t)constrain((int)body["scheduleEndMin"].as<int>(), 0, 1439);
+  const bool whEnabled = body["webhookEnabled"].isNull() ? t->webhookEnabled : body["webhookEnabled"].as<bool>();
+  const bool whOpen = body["webhookOpen"].isNull() ? t->webhookOpen : body["webhookOpen"].as<bool>();
+  const bool whClosing = body["webhookClosing"].isNull() ? t->webhookClosing : body["webhookClosing"].as<bool>();
+  const bool whClose = body["webhookClose"].isNull() ? t->webhookClose : body["webhookClose"].as<bool>();
+  const String whUrl = body["webhookUrl"].isNull() ? t->webhookUrl : String((const char*)body["webhookUrl"]);
   updateTag(id, name, hold, closeDelay, rssi, safetyClose, openDuration, rfRole, icon,
-            schedEnabled, schedStart, schedEnd);
+            schedEnabled, schedStart, schedEnd, whEnabled, whOpen, whClosing, whClose, whUrl);
   saveTagsToPrefs();
   JsonDocument doc;
   doc["ok"] = true;

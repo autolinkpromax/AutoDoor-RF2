@@ -21,6 +21,14 @@ function toggleEdSched() {
   }
 }
 
+function toggleEdWebhook() {
+  const chk = $('edWebhookEnabled');
+  const body = $('edWebhookBody');
+  if (chk && body) {
+    body.classList.toggle('hidden', !chk.checked);
+  }
+}
+
 function selectIconChip(iconVal) {
   const target = iconVal || 'auto';
   const hiddenInput = $('edTagIcon');
@@ -51,6 +59,13 @@ function setEditorDefaults() {
   if ($('edSchedStart')) $('edSchedStart').value = '08:00';
   if ($('edSchedEnd')) $('edSchedEnd').value = '17:00';
   toggleEdSched();
+  const whChk = $('edWebhookEnabled');
+  if (whChk) whChk.checked = false;
+  if ($('edWebhookOpen')) $('edWebhookOpen').checked = true;
+  if ($('edWebhookClosing')) $('edWebhookClosing').checked = true;
+  if ($('edWebhookClose')) $('edWebhookClose').checked = true;
+  if ($('edWebhookUrl')) $('edWebhookUrl').value = '';
+  toggleEdWebhook();
   selectIconChip('auto');
   updateEdRssiLbl();
   updateEdSafetyDelayWarn();
@@ -117,6 +132,14 @@ async function openEditor(id) {
     if ($('edSchedStart')) $('edSchedStart').value = formatMin(startMin);
     if ($('edSchedEnd')) $('edSchedEnd').value = formatMin(endMin);
     toggleEdSched();
+
+    const whEnabled = !!t.webhookEnabled;
+    if ($('edWebhookEnabled')) $('edWebhookEnabled').checked = whEnabled;
+    if ($('edWebhookOpen')) $('edWebhookOpen').checked = (t.webhookOpen !== false);
+    if ($('edWebhookClosing')) $('edWebhookClosing').checked = (t.webhookClosing !== false);
+    if ($('edWebhookClose')) $('edWebhookClose').checked = (t.webhookClose !== false);
+    if ($('edWebhookUrl')) $('edWebhookUrl').value = t.webhookUrl || '';
+    toggleEdWebhook();
 
     selectIconChip(t.icon || 'auto');
     
@@ -209,6 +232,11 @@ async function saveEditor() {
   const schedEnabled = !!$('edSchedEnabled')?.checked;
   const schedStartMin = parseMin($('edSchedStart')?.value, 0);
   const schedEndMin = parseMin($('edSchedEnd')?.value, 1439);
+  const webhookEnabled = !!$('edWebhookEnabled')?.checked;
+  const webhookOpen = !!$('edWebhookOpen')?.checked;
+  const webhookClosing = !!$('edWebhookClosing')?.checked;
+  const webhookClose = !!$('edWebhookClose')?.checked;
+  const webhookUrl = $('edWebhookUrl')?.value?.trim() || '';
 
   const body = {
     name,
@@ -222,6 +250,11 @@ async function saveEditor() {
     scheduleEnabled: schedEnabled,
     scheduleStartMin: schedStartMin,
     scheduleEndMin: schedEndMin,
+    webhookEnabled,
+    webhookOpen,
+    webhookClosing,
+    webhookClose,
+    webhookUrl,
   };
   try {
     const tagId = State.editingId;

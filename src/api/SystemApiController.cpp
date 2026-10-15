@@ -5,6 +5,7 @@
 #include "modules/esp_now_runtime.h"
 #include "modules/web_auth.h"
 #include "modules/webhook_hooks.h"
+#include "modules/outbound_webhook.h"
 #include "modules/wifi_manager.h"
 #include "tags/TagRegistry.h"
 #include "diagnostics/DiagEventLogger.h"
@@ -64,6 +65,14 @@ void SystemApiController::registerRoutes() {
 
   _server.on("/api/webhook", HTTP_GET, [this]() {
     wrap([this]() { handleWebhookGet(); });
+  });
+
+  _server.on("/api/webhook", HTTP_POST, [this]() {
+    wrap([this]() { handleWebhookSave(); });
+  });
+
+  _server.on("/api/webhook/test", HTTP_POST, [this]() {
+    wrap([this]() { handleWebhookTest(); });
   });
 }
 
@@ -430,5 +439,71 @@ void SystemApiController::handleWebhookGet() {
     blynk["close"] = blynkBase + "&V2=1";
     blynk["tagAutoToggle"] = blynkBase + "&V3=1";
   }
+
+  JsonObject out = doc["outbound"].to<JsonObject>();
+  out["enabled"] = gWebhookConfig.enabled;
+  out["url"] = gWebhookConfig.url;
+  out["lineEnabled"] = gWebhookConfig.lineEnabled;
+  out["lineToken"] = gWebhookConfig.lineToken;
+  out["lineTargetId"] = gWebhookConfig.lineTargetId;
+  out["eventSafety"] = gWebhookConfig.eventSafety;
+  out["eventOpenDuration"] = gWebhookConfig.eventOpenDuration;
+  out["openDurationMinutes"] = gWebhookConfig.openDurationMinutes;
+  out["lastStatus"] = getLastWebhookStatus();
+  out["lastTimeMs"] = getLastWebhookTimeMs();
+
   sendJson(200, doc);
+}
+
+void SystemApiController::handleWebhookSave() {
+  const JsonDocument body = parseBodyOrEmpty();
+  OutboundWebhookConfig cfg = gWebhookConfig;
+  if (!body["enabled"].isNull()) {
+    cfg.enabled = body["enabled"].as<bool>();
+  }
+  if (!body["url"].isNull()) {
+    cfg.url = body["url"].as<String>();
+    cfg.url.trim();
+  }
+  if (!body["lineEnabled"].isNull()) {
+    cfg.lineEnabled = body["lineEnabled"].as<bool>();
+  }
+  if (!body["lineToken"].isNull()) {
+    cfg.lineToken = body["lineToken"].as<String>();
+    cfg.lineToken.trim();
+  }
+  if (!body["lineTargetId"].isNull()) {
+    cfg.lineTargetId = body["lineTargetId"].as<String>();
+    cfg.lineTargetId.trim();
+  }
+  if (!body["eventSafety"].isNull()) {
+    cfg.eventSafety = body["eventSafety"].as<bool>();
+  }
+  if (!body["eventOpenDuration"].isNull()) {
+    cfg.eventOpenDuration = body["eventOpenDuration"].as<bool>();
+  }
+  if (!body["openDurationMinutes"].isNull()) {
+    cfg.openDurationMinutes = (uint16_t)constrain(body["openDurationMinutes"].as<int>(), 1, 60);
+  }
+  saveOutboundWebhookConfig(cfg);
+
+  JsonDocument doc;
+  doc["ok"] = true;
+  doc["enabled"] = cfg.enabled;
+  doc["url"] = cfg.url;
+  doc["lineEnabled"] = cfg.lineEnabled;
+  doc["lineToken"] = cfg.lineToken;
+  doc["lineTargetId"] = cfg.lineTargetId;
+  doc["eventSafety"] = cfg.eventSafety;
+  doc["eventOpenDuration"] = cfg.eventOpenDuration;
+  doc["openDurationMinutes"] = cfg.openDurationMinutes;
+  sendJson(200, doc);
+}
+
+void SystemApiController::handleWebhookTest() {
+  const bool enqueued = triggerOutboundWebhookTest();
+  JsonDocument doc;
+  doc["ok"] = enqueued;
+  doc["msg"] = enqueued ? "Enqueued test webhook" : "Queue full or not ready";
+  sendJson(enqueued ? 200 : 409, doc);
 }

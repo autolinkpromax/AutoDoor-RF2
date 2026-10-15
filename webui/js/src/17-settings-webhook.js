@@ -3,6 +3,18 @@ async function loadWebhookUi() {
     State.webhookCache = await api('/api/webhook');
     const hint = $('hookHostHint');
     if (hint) hint.textContent = 'http://' + (State.webhookCache.host || '—');
+
+    const out = State.webhookCache?.outbound;
+    if (out) {
+      if ($('swWhOut')) $('swWhOut').checked = !!out.enabled;
+      if ($('whOutUrl')) $('whOutUrl').value = out.url || '';
+      if ($('swWhLine')) $('swWhLine').checked = !!out.lineEnabled;
+      if ($('whLineToken')) $('whLineToken').value = out.lineToken || '';
+      if ($('whLineTarget')) $('whLineTarget').value = out.lineTargetId || '';
+      if ($('chkWhSafety')) $('chkWhSafety').checked = out.eventSafety !== false;
+      if ($('chkWhOpenDuration')) $('chkWhOpenDuration').checked = out.eventOpenDuration !== false;
+      if ($('whOpenDurationMin')) $('whOpenDurationMin').value = out.openDurationMinutes || 5;
+    }
   } catch (_) {
     State.webhookCache = null;
   }
@@ -266,4 +278,82 @@ function buildJsonApiString() {
 async function copyJsonApi() {
   if (!State.webhookCache) await loadWebhookUi();
   await copyHookText(buildJsonApiString(), 'คัดลอก JSON ควบคุมและสถานะเรียบร้อยแล้ว');
+}
+
+async function saveOutboundWebhook() {
+  const enabled = !!$('swWhOut')?.checked;
+  const lineEnabled = !!$('swWhLine')?.checked;
+  const lineToken = $('whLineToken')?.value?.trim() || '';
+  const lineTargetId = $('whLineTarget')?.value?.trim() || '';
+  const eventSafety = !!$('chkWhSafety')?.checked;
+  const eventOpenDuration = !!$('chkWhOpenDuration')?.checked;
+  const openDurationMinutes = Math.max(1, Math.min(60, parseInt($('whOpenDurationMin')?.value, 10) || 5));
+
+  if (lineEnabled && !lineToken) {
+    setHint('whOutMsg', 'hint err', 'กรุณาระบุ LINE Channel Access Token หรือปิดสวิตช์ LINE');
+    return;
+  }
+
+  try {
+    setHint('whOutMsg', 'hint', 'กำลังบันทึก...');
+    const body = {
+      enabled,
+      lineEnabled,
+      lineToken,
+      lineTargetId,
+      eventSafety,
+      eventOpenDuration,
+      openDurationMinutes
+    };
+    if ($('whOutUrl')) {
+      body.url = $('whOutUrl').value.trim();
+    }
+    const res = await api('/api/webhook', {
+      method: 'POST',
+      body
+    });
+    if (res.ok) {
+      setHint('whOutMsg', 'hint ok', 'บันทึกการตั้งค่าระบบแจ้งเตือนเรียบร้อย');
+      await loadWebhookUi();
+    } else {
+      setHint('whOutMsg', 'hint err', 'บันทึกไม่สำเร็จ: ' + (res.error || 'error'));
+    }
+  } catch (e) {
+    setHint('whOutMsg', 'hint err', 'บันทึกไม่สำเร็จ: ' + e.message);
+  }
+}
+
+async function testOutboundWebhook() {
+  const enabled = !!$('swWhOut')?.checked;
+  const lineEnabled = !!$('swWhLine')?.checked;
+  const lineToken = $('whLineToken')?.value?.trim() || '';
+  const lineTargetId = $('whLineTarget')?.value?.trim() || '';
+
+  try {
+    setHint('whOutMsg', 'hint', 'กำลังส่งข้อความทดสอบ...');
+    const body = {
+      enabled,
+      lineEnabled,
+      lineToken,
+      lineTargetId,
+      eventSafety: !!$('chkWhSafety')?.checked,
+      eventOpenDuration: !!$('chkWhOpenDuration')?.checked,
+      openDurationMinutes: Math.max(1, Math.min(60, parseInt($('whOpenDurationMin')?.value, 10) || 5))
+    };
+    if ($('whOutUrl')) {
+      body.url = $('whOutUrl').value.trim();
+    }
+    await api('/api/webhook', {
+      method: 'POST',
+      body
+    });
+    const res = await api('/api/webhook/test', { method: 'POST' });
+    if (res.ok) {
+      setHint('whOutMsg', 'hint ok', 'ส่งข้อความทดสอบเข้าคิวแล้ว');
+    } else {
+      setHint('whOutMsg', 'hint err', 'ส่งไม่สำเร็จ: ' + (res.msg || 'error'));
+    }
+  } catch (e) {
+    setHint('whOutMsg', 'hint err', 'เกิดข้อผิดพลาด: ' + e.message);
+  }
 }

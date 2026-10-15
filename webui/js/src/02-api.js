@@ -5,6 +5,7 @@ async function api(path, opts = {}) {
 
   try {
     const res = await fetch(path, {
+      cache: 'no-store',
       credentials: 'same-origin',
       headers: opts.body ? { 'Content-Type': 'application/json' } : undefined,
       signal: opts.signal || controller.signal,

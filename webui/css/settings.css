@@ -182,4 +182,69 @@
   outline: none !important;
 }
 
+.whEvTile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+.whEvTile:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.whEvTile input[type=checkbox] {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+  accent-color: var(--pri, #3b82f6);
+  cursor: pointer;
+}
+.whEvTile .whEvIco {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.whEvTile .whEvMain {
+  flex: 1;
+  min-width: 0;
+}
+.whEvTile .whEvTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.whEvTile .whEvSub {
+  font-size: 11px;
+  color: #8b95a5;
+  margin-top: 2px;
+}
+.whDurationInp {
+  width: 58px !important;
+  height: 28px !important;
+  padding: 2px 4px !important;
+  text-align: center !important;
+  border-radius: 6px !important;
+  border: 1px solid #4a5568 !important;
+  background: #111827 !important;
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  display: inline-block !important;
+}
+
+
 

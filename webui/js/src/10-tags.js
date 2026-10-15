@@ -6,7 +6,7 @@ async function refreshTagList() {
 }
 
 function deviceListKey(tags) {
-  return tags.map((t) => `${t.id}:${t.name}:${t.icon || ''}:${t.active ? 1 : 0}:${t.tagOpenDurationMs}:${t.tagCloseDelayMs}:${t.tagSafetyCloseDelayMs}:${t.tagHoldMs}:${t.rfRole || 0}:${t.scheduleEnabled ? 1 : 0}:${t.scheduleStartMin}:${t.scheduleEndMin}`).join('|');
+  return tags.map((t) => `${t.id}:${t.name}:${t.icon || ''}:${t.active ? 1 : 0}:${t.tagOpenDurationMs}:${t.tagCloseDelayMs}:${t.tagSafetyCloseDelayMs}:${t.tagHoldMs}:${t.rfRole || 0}:${t.scheduleEnabled ? 1 : 0}:${t.scheduleStartMin}:${t.scheduleEndMin}:${t.webhookEnabled === false ? 0 : 1}:${t.webhookOpen === false ? 0 : 1}:${t.webhookClosing === false ? 0 : 1}:${t.webhookClose === false ? 0 : 1}:${t.webhookUrl || ''}`).join('|');
 }
 
 function getTagParamText(t) {
@@ -25,25 +25,39 @@ function getTagParamText(t) {
     ? ` · <span style="color:#38bdf8;font-weight:500;" title="จำกัดเวลาใช้งาน">🕒 ${formatMin(t.scheduleStartMin || 0)}-${formatMin(t.scheduleEndMin != null ? t.scheduleEndMin : 1439)}</span>`
     : '';
 
+  let whBadge = '';
+  if (t.webhookEnabled === false || (t.webhookOpen === false && t.webhookClosing === false && t.webhookClose === false)) {
+    whBadge = ` · <span style="color:#64748b;" title="ปิดแจ้งเตือน">🔕 ไม่แจ้งเตือน</span>`;
+  } else if (t.webhookUrl) {
+    const isLine = t.webhookUrl.startsWith('U') || t.webhookUrl.startsWith('C') || t.webhookUrl.startsWith('R') || t.webhookUrl.startsWith('line:');
+    const badgeIcon = isLine ? '💬' : '🔔';
+    const evs = [];
+    if (t.webhookOpen !== false) evs.push('เปิด');
+    if (t.webhookClosing !== false) evs.push('กำลังปิด');
+    if (t.webhookClose !== false) evs.push('ปิด');
+    const evText = evs.join('+');
+    whBadge = ` · <span style="color:${isLine ? '#4ade80' : '#a78bfa'};font-weight:500;" title="${isLine ? 'LINE ID' : 'Webhook'}: ${escHtml(t.webhookUrl)}">${badgeIcon} ${escHtml(t.webhookUrl)} (${evText})</span>`;
+  }
+
   if (t.active) {
     const remMs = (typeof t.holdRemainingMs === 'number' && t.holdRemainingMs > 0)
       ? t.holdRemainingMs
       : (isRf ? 1000 : (t.tagHoldMs || 2000));
     const remSec = Math.max(0.1, (remMs / 1000)).toFixed(1);
     return isRf
-      ? `<span style="color:#10b981;font-weight:600;">🟢 ส่งสัญญาณ (ทำงานอีก ${remSec} วิ)</span>${schedBadge}`
-      : `<span style="color:#10b981;font-weight:600;">🟢 กำลังทำงาน (จะหายใน ${remSec} วิ)</span>${schedBadge}`;
+      ? `<span style="color:#10b981;font-weight:600;">🟢 ส่งสัญญาณ (ทำงานอีก ${remSec} วิ)</span>${schedBadge}${whBadge}`
+      : `<span style="color:#10b981;font-weight:600;">🟢 กำลังทำงาน (จะหายใน ${remSec} วิ)</span>${schedBadge}${whBadge}`;
   }
 
   const openPrefix = openSec > 0 ? `เปิดช่อง ${openSec} วิ · รอ ${closeDelaySec} วิ` : `หน่วงปิด ${closeDelaySec} วิ`;
   if (isRf) {
-    if (t.rfRole === 1) return `<span style="color:#fbbf24;font-weight:500;">🟡 หน้าที่: เปิดค้าง (Hold Open)</span>${schedBadge}`;
-    if (t.rfRole === 2) return `<span style="color:#f87171;font-weight:500;">🔴 หน้าที่: สั่งปิดประตูทันที</span>${schedBadge}`;
-    if (t.rfRole === 3) return `<span style="color:#9ca3af;font-weight:500;">⏹️ หน้าที่: สั่งหยุดมอเตอร์</span>${schedBadge}`;
-    if (t.rfRole === 4) return `${openPrefix} · กันหนีบ ${safetyCloseSec} วิ · <span style="color:#10b981;font-weight:500;">🟢 เปิดอย่างเดียว (Auto/Open)</span>${schedBadge}`;
-    return `${openPrefix} · กันหนีบ ${safetyCloseSec} วิ · <span style="color:#34d399;">🟢 เปิดออโต้ (Auto/Toggle)</span>${schedBadge}`;
+    if (t.rfRole === 1) return `<span style="color:#fbbf24;font-weight:500;">🟡 หน้าที่: เปิดค้าง (Hold Open)</span>${schedBadge}${whBadge}`;
+    if (t.rfRole === 2) return `<span style="color:#f87171;font-weight:500;">🔴 หน้าที่: สั่งปิดประตูทันที</span>${schedBadge}${whBadge}`;
+    if (t.rfRole === 3) return `<span style="color:#9ca3af;font-weight:500;">⏹️ หน้าที่: สั่งหยุดมอเตอร์</span>${schedBadge}${whBadge}`;
+    if (t.rfRole === 4) return `${openPrefix} · กันหนีบ ${safetyCloseSec} วิ · <span style="color:#10b981;font-weight:500;">🟢 เปิดอย่างเดียว (Auto/Open)</span>${schedBadge}${whBadge}`;
+    return `${openPrefix} · กันหนีบ ${safetyCloseSec} วิ · <span style="color:#34d399;">🟢 เปิดออโต้ (Auto/Toggle)</span>${schedBadge}${whBadge}`;
   }
-  return `${openPrefix} · กันหนีบ ${safetyCloseSec} วิ · หายใน ${holdSec} วิ${schedBadge}`;
+  return `${openPrefix} · กันหนีบ ${safetyCloseSec} วิ · หายใน ${holdSec} วิ${schedBadge}${whBadge}`;
 }
 
 function buildDeviceCardHtml(t) {

@@ -101,7 +101,12 @@ public:
               const String& icon = "",
               bool scheduleEnabled = false,
               uint16_t scheduleStartMin = 0,
-              uint16_t scheduleEndMin = 1439);
+              uint16_t scheduleEndMin = 1439,
+              bool webhookEnabled = false,
+              bool webhookOpen = true,
+              bool webhookClosing = true,
+              bool webhookClose = true,
+              const String& webhookUrl = "");
   bool remove(const String& id);
   void noteSeen(Tag& t, int8_t rssi, uint32_t now);
 
@@ -212,8 +217,13 @@ inline bool updateTag(const String& id, const String& name, uint32_t tagHoldMs, 
                       const String& icon = "",
                       bool scheduleEnabled = false,
                       uint16_t scheduleStartMin = 0,
-                      uint16_t scheduleEndMin = 1439) {
-  return gTagRegistry.update(id, name, tagHoldMs, tagCloseDelayMs, tagRssiMin, tagSafetyCloseDelayMs, tagOpenDurationMs, rfRole, icon, scheduleEnabled, scheduleStartMin, scheduleEndMin);
+                      uint16_t scheduleEndMin = 1439,
+                      bool webhookEnabled = false,
+                      bool webhookOpen = true,
+                      bool webhookClosing = true,
+                      bool webhookClose = true,
+                      const String& webhookUrl = "") {
+  return gTagRegistry.update(id, name, tagHoldMs, tagCloseDelayMs, tagRssiMin, tagSafetyCloseDelayMs, tagOpenDurationMs, rfRole, icon, scheduleEnabled, scheduleStartMin, scheduleEndMin, webhookEnabled, webhookOpen, webhookClosing, webhookClose, webhookUrl);
 }
 inline bool deleteTag(const String& id) { return gTagRegistry.remove(id); }
 inline void noteTagSeen(Tag& t, int8_t rssi, uint32_t now) { gTagRegistry.noteSeen(t, rssi, now); }

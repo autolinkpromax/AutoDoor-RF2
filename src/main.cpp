@@ -20,6 +20,7 @@
 #include "modules/wifi_manager.h"
 #include "modules/rf433_runtime.h"
 #include "modules/event_archive.h"
+#include "modules/outbound_webhook.h"
 #include <esp_task_wdt.h>
 
 
@@ -84,6 +85,7 @@ void setup() {
                 kBootBtnPin, digitalRead(kBootBtnPin));
   initRf433();
   initEventArchive();
+  initOutboundWebhook();
   gSystemBootReady = true;
   Serial.println("[boot] Core ready: door ground truth confirmed, RF433 receiver active");
 

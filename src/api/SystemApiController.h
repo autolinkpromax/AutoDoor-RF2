@@ -24,4 +24,6 @@ private:
   void handleOtaFinish();
   void handleOtaUpload();
   void handleWebhookGet();
+  void handleWebhookSave();
+  void handleWebhookTest();
 };

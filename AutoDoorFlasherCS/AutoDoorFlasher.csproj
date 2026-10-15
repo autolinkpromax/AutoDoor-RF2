@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    
+    <!-- Self-Contained Single File Settings -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    
+    <!-- App Metadata -->
+    <ApplicationTitle>AutoDoor ESP32-C3 One-Click Flasher</ApplicationTitle>
+    <Product>AutoDoor ESP32-C3 Flasher</Product>
+    <Company>AutoDoor</Company>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.IO.Ports" Version="10.0.12" />
+    <PackageReference Include="System.Management" Version="10.0.12" />
+  </ItemGroup>
+
+  <!-- Embed Firmware Binaries and Standalone Flasher Engine -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\1-Click-Flash-ESP32C3\bin\bootloader.bin" Link="Resources\bootloader.bin" />
+    <EmbeddedResource Include="..\1-Click-Flash-ESP32C3\bin\partitions.bin" Link="Resources\partitions.bin" />
+    <EmbeddedResource Include="..\1-Click-Flash-ESP32C3\bin\boot_app0.bin" Link="Resources\boot_app0.bin" />
+    <EmbeddedResource Include="..\1-Click-Flash-ESP32C3\bin\firmware.bin" Link="Resources\firmware.bin" />
+    <EmbeddedResource Include="esptool.zip" Link="Resources\esptool.zip" />
+  </ItemGroup>
+
+</Project>

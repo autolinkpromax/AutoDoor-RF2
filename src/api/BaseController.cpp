@@ -2,6 +2,7 @@
 #include "modules/web_auth.h"
 
 void BaseController::sendJson(int code, const JsonDocument& doc) {
+  _server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   String out;
   serializeJson(doc, out);
   _server.send(code, "application/json", out);

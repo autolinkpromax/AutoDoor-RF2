@@ -126,6 +126,58 @@
           <p class="edHint" style="margin-top:8px; font-size:12px">💡 หากปิดสวิตช์ Tag จะใช้งานได้ตลอด 24 ชั่วโมง (รองรับข้ามเที่ยงคืน เช่น 22:00 ถึง 06:00)</p>
         </div>
       </section>
+      <section class="edSec" id="edWebhookSec">
+        <div class="swRow" style="margin-bottom:0">
+          <div>
+            <h3 class="edSecTitle" style="margin-bottom:2px">แจ้งเตือน Webhook & LINE</h3>
+            <p class="edHint" style="margin:0">ส่งการแจ้งเตือนเฉพาะสำหรับ Tag นี้</p>
+          </div>
+          <label class="sw" title="แจ้งเตือน Webhook & LINE">
+            <input type="checkbox" id="edWebhookEnabled" data-action="toggle-ed-webhook" />
+            <span class="swTrack"></span>
+          </label>
+        </div>
+        <div id="edWebhookBody" class="hidden" style="margin-top:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px;">
+          <label style="font-size:13px; color:var(--text-muted, #aaa); display:block; margin-bottom:4px">LINE User ID หรือ Webhook URL เฉพาะ Tag นี้</label>
+          <div class="inpWrap">
+            <input id="edWebhookUrl" placeholder="เช่น U91a82c... (LINE ID) หรือ car-dad (ntfy)" maxlength="96" />
+            <span class="inpIcon">🔔</span>
+          </div>
+          <p class="edHint" style="margin-top:6px; font-size:12px">💡 ใส่ LINE User ID (ขึ้นต้นด้วย <code>U...</code>) เพื่อส่งตรงเข้าแชทส่วนตัว หรือใส่ Topic ntfy / URL (เว้นว่างเพื่อส่งเข้ากลุ่มส่วนกลาง)</p>
+
+          <div style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08);">
+            <label style="font-size:12px; font-weight:600; color:var(--text-muted, #aaa); display:block; margin-bottom:8px">เลือกเหตุการณ์ที่ต้องการให้ Tag นี้แจ้งเตือน:</label>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <label class="edEvTile">
+                <input type="checkbox" id="edWebhookOpen" checked />
+                <span class="edEvIco">🟢</span>
+                <div class="edEvMain">
+                  <div class="edEvTitle">ประตูเริ่มเปิด</div>
+                  <div class="edEvSub">แจ้งเตือนทันทีเมื่อ Tag นี้สั่งเปิดประตู</div>
+                </div>
+              </label>
+
+              <label class="edEvTile">
+                <input type="checkbox" id="edWebhookClosing" checked />
+                <span class="edEvIco">🟡</span>
+                <div class="edEvMain">
+                  <div class="edEvTitle">ประตูกำลังปิด</div>
+                  <div class="edEvSub">แจ้งเตือนเมื่อเริ่มปิดประตู (ตรวจพบรถผ่านเซ็นเซอร์หรือนับเวลาถอยหลัง)</div>
+                </div>
+              </label>
+
+              <label class="edEvTile">
+                <input type="checkbox" id="edWebhookClose" checked />
+                <span class="edEvIco">🔒</span>
+                <div class="edEvMain">
+                  <div class="edEvTitle">ประตูปิดสนิท</div>
+                  <div class="edEvSub">แจ้งเตือนยืนยันเมื่อประตูปิดสนิทเรียบร้อย</div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
       <section class="edSec">
         <h3 class="edSecTitle">ชื่อ Tag</h3>
         <div class="inpWrap">

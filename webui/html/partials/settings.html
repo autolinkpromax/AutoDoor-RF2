@@ -463,6 +463,76 @@
               </div>
             </div>
             <div class="hint" id="hookMsg"></div>
+
+            <div class="hookSec" style="border-top:1px solid var(--border,#333);margin-top:16px;padding-top:14px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <b>ระบบแจ้งเตือนภายนอก (Outbound Notification)</b>
+                <label class="sw" title="เปิด/ปิดระบบแจ้งเตือน Webhook">
+                  <input type="checkbox" id="swWhOut" />
+                  <span class="swTrack"></span>
+                </label>
+              </div>
+              <div class="muted" style="margin-bottom:12px;font-size:12px">ส่งการแจ้งเตือนอัตโนมัติไปยัง LINE, Discord หรือ Webhook ปลายทางเมื่อเกิดเหตุการณ์ (ทำงานในเบื้องหลัง ปลอดภัย ไม่กระทบการทำงานของประตู)</div>
+
+              <!-- 2. LINE Messaging API (LINE Bot) -->
+              <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:12px; margin-bottom:12px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                  <span style="font-size:13px;font-weight:600;color:#22c55e;display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:16px;">💬</span> แจ้งเตือนผ่าน LINE (Messaging API)
+                  </span>
+                  <label class="sw" title="เปิด/ปิดแจ้งเตือนผ่าน LINE">
+                    <input type="checkbox" id="swWhLine" />
+                    <span class="swTrack"></span>
+                  </label>
+                </div>
+
+                <div id="whLineBody" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+                  <div>
+                    <label class="lblMono" style="margin-bottom:4px;font-size:11px;">LINE Channel Access Token</label>
+                    <input id="whLineToken" type="password" placeholder="คัดลอก Channel access token จาก LINE Developers" spellcheck="false" autocomplete="off" />
+                  </div>
+                  <div>
+                    <label class="lblMono" style="margin-bottom:4px;font-size:11px;">LINE Target ID ส่วนกลาง (User ID หรือ Group ID)</label>
+                    <input id="whLineTarget" type="text" placeholder="เช่น U91a82c40... หรือ C4a8f92b..." spellcheck="false" autocomplete="off" />
+                    <div class="muted" style="font-size:11px;margin-top:4px;">💡 ข้อความส่วนกลาง (เซ็นเซอร์ตัด, ประตูเปิดค้าง) และ Tag ที่ไม่ได้ระบุ ID เฉพาะ จะส่งเข้าเป้าหมายนี้</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. เลือกเหตุการณ์ที่ต้องการให้แจ้งเตือน -->
+              <div style="margin-top:12px">
+                <label class="lblMono" style="margin-bottom:8px;font-weight:600;">เลือกเหตุการณ์ที่ต้องการให้แจ้งเตือน:</label>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  <label class="whEvTile">
+                    <input type="checkbox" id="chkWhSafety" checked />
+                    <span class="whEvIco">🚨</span>
+                    <div class="whEvMain">
+                      <div class="whEvTitle">เซนเซอร์ตัดสิ่งกีดขวาง (Safety Beam)</div>
+                      <div class="whEvSub">แจ้งเตือนทันทีเมื่อลำแสงถูกตัด และประตูกำลังถอยกลับอัตโนมัติ</div>
+                    </div>
+                  </label>
+
+                  <label class="whEvTile">
+                    <input type="checkbox" id="chkWhOpenDuration" checked />
+                    <span class="whEvIco">⚠️</span>
+                    <div class="whEvMain">
+                      <div class="whEvTitle">
+                        <span>ประตูเปิดค้างไว้นานกว่า</span>
+                        <input type="number" id="whOpenDurationMin" class="whDurationInp" min="1" max="60" value="5" onclick="event.stopPropagation()" />
+                        <span>นาที</span>
+                      </div>
+                      <div class="whEvSub">แจ้งเตือนซ้ำเป็นระยะหากประตูลืมเปิดค้างทิ้งไว้</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:8px;margin-top:14px">
+                <button type="button" class="btnPri" style="flex:1" data-action="save-wh-out">💾 บันทึกการตั้งค่า</button>
+                <button type="button" class="hookBtn" style="padding:0 14px" data-action="test-wh-out">🧪 ทดสอบส่ง</button>
+              </div>
+              <div class="hint" id="whOutMsg"></div>
+            </div>
           </div>
         </div>
       </div>
