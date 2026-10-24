@@ -21,6 +21,7 @@
 #include "modules/rf433_runtime.h"
 #include "modules/event_archive.h"
 #include "modules/outbound_webhook.h"
+#include "modules/mqtt_service.h"
 #include <esp_task_wdt.h>
 
 
@@ -97,6 +98,7 @@ void setup() {
   }
 
   setupWebServer();
+  initMqttService();
   Serial.printf("[boot] wifi ch=%d espnow ch=%u\n", WiFi.channel(), (unsigned)currentEspNowChannel());
 
   Serial.printf("[boot] AP http://%s/\n", WiFi.softAPIP().toString().c_str());
@@ -207,10 +209,8 @@ void stepBootButton() {
 void loop() {
   esp_task_wdt_reset();
   stepEspNowRxProcessing();
-  stepRf433();
   stepBootButton();
   gServer.handleClient();
-  stepRf433();
   gMotor.step();
   stepTagLearn();
 
@@ -218,7 +218,6 @@ void loop() {
   checkEspNowReceiverHealth();
   ensureEspNowChannel();
   stepReceiverAnnounce();
-  stepRf433();
   gDoorController.step();
   stepWiFiReconnect();
   stepApIdle();
@@ -227,9 +226,10 @@ void loop() {
   stepSchedule();
   stepEventArchive();
   stepBlynk();
-  stepRf433();
   gTagRegistry.flushIfIdle();
   stepLocalPanel();
   stepStatusLed();
+  // Drain any residual SYN480R available flag once per loop (rf433Task handles actual processing)
+  stepRf433();
   vTaskDelay(1);
 }

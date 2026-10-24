@@ -501,9 +501,28 @@ void SystemApiController::handleWebhookSave() {
 }
 
 void SystemApiController::handleWebhookTest() {
-  const bool enqueued = triggerOutboundWebhookTest();
+  const JsonDocument body = parseBodyOrEmpty();
+  String customUrl = "";
+  String tagName = "";
+  if (!body["url"].isNull()) {
+    customUrl = body["url"].as<String>();
+    customUrl.trim();
+  }
+  if (!body["tagName"].isNull()) {
+    tagName = body["tagName"].as<String>();
+    tagName.trim();
+  }
+
+  const bool enqueued = triggerOutboundWebhookTest(
+    customUrl.isEmpty() ? nullptr : customUrl.c_str(),
+    tagName.isEmpty() ? nullptr : tagName.c_str()
+  );
+
+  String resolvedTarget = resolveWebhookUrl(customUrl.isEmpty() ? gWebhookConfig.url : customUrl);
+
   JsonDocument doc;
   doc["ok"] = enqueued;
+  doc["target"] = resolvedTarget;
   doc["msg"] = enqueued ? "Enqueued test webhook" : "Queue full or not ready";
   sendJson(enqueued ? 200 : 409, doc);
 }

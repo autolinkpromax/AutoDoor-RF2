@@ -416,6 +416,65 @@
           </div>
         </div>
 
+        <div class="setFold setupCard" id="cardMqtt">
+          <button type="button" class="setupHead setFoldHead" data-action="toggle-set-group" data-group="cardMqtt">
+            <span>Home Assistant & MQTT (Auto-Discovery)</span>
+            <span class="setupHeadMeta"><span id="mqttHeadBadge" class="badgeMini">ตรวจเช็ก...</span><span class="setupChev">▼</span></span>
+          </button>
+          <div id="cardMqttBody" class="setupBody collapsed">
+            <div class="swRow" style="margin-bottom:10px">
+              <div class="muted" style="font-size:12px">เชื่อมต่อ Home Assistant อัตโนมัติผ่าน MQTT Discovery โดยไม่ต้องเขียน YAML เพิ่ม</div>
+              <label class="sw" title="เปิด/ปิด MQTT">
+                <input type="checkbox" id="swMqtt" data-action="toggle-mqtt" />
+                <span class="swTrack"></span>
+              </label>
+            </div>
+            <div class="blynkStatusBox" id="mqttStatusBox">สถานะ: —</div>
+            <p class="muted" style="margin:10px 0;font-size:12px;line-height:1.5">ระบุที่อยู่ของ MQTT Broker (เช่น IP ของ Home Assistant หรือ Mosquitto Broker)</p>
+            <div style="display:flex; gap:10px;">
+              <div style="flex:2">
+                <label class="lblMono">Broker Host / IP</label>
+                <input id="mqttHost" placeholder="192.168.1.xxx หรือ homeassistant.local" spellcheck="false" />
+              </div>
+              <div style="flex:1; max-width:90px;">
+                <label class="lblMono">Port</label>
+                <input id="mqttPort" type="number" min="1" max="65535" placeholder="1883" value="1883" />
+              </div>
+            </div>
+            <label class="lblMono" style="margin-top:10px">Username (ถ้ามี)</label>
+            <input id="mqttUser" placeholder="เว้นว่าง = Anonymous" spellcheck="false" autocomplete="off" />
+            <label class="lblMono" style="margin-top:10px">Password (ถ้ามี)</label>
+            <div class="pwWrap">
+              <input id="mqttPass" type="password" placeholder="รหัสผ่าน Broker" spellcheck="false" autocomplete="off" />
+              <button type="button" class="pwToggle" data-action="toggle-pw" data-target="mqttPass" aria-label="แสดงรหัสผ่าน" title="แสดง/ซ่อน"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+              <div style="flex:1">
+                <label class="lblMono">Topic Prefix</label>
+                <input id="mqttTopicPrefix" placeholder="autodoor" value="autodoor" spellcheck="false" />
+              </div>
+              <div style="flex:1">
+                <label class="lblMono">Discovery Prefix</label>
+                <input id="mqttDiscPrefix" placeholder="homeassistant" value="homeassistant" spellcheck="false" />
+              </div>
+            </div>
+            <div style="margin-top:12px; padding:10px; border-radius:8px; background:rgba(255,255,255,0.02); border:1px solid var(--line); font-size:12px; line-height:1.5;">
+              <b style="color:var(--pri)">💡 Home Assistant Integration:</b>
+              <div class="muted" style="margin-top:2px">เมื่อบันทึกและเชื่อมต่อสำเร็จ ประตู AutoDoor จะปรากฏใน Home Assistant > Devices & Services > MQTT โดยอัตโนมัติ พร้อมปุ่ม Open / Close / Stop, สถานะประตู, เซ็นเซอร์กันหนีบ (Safety Beam) และชื่อ Tag รถล่าสุด</div>
+            </div>
+            <button type="button" class="btnPri" style="margin-top:12px" data-action="save-mqtt">บันทึกการตั้งค่า MQTT</button>
+            <div class="hint" id="mqttMsg"></div>
+
+            <div class="hookSec" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line);">
+              <b>ระบบ Home Assistant (Dashboard Card)</b>
+              <div class="muted" style="margin-bottom:8px;font-size:12px">คัดลอกโค้ด YAML ไปวางในการ์ดแบบ Manual เพื่อสร้างแผงควบคุมรวมปุ่มใหญ่ + สถานะ + เซนเซอร์</div>
+              <div class="hookBtns">
+                <button type="button" class="hookBtn wide" data-action="copy-ha-dashboard" id="btnCopyHaYaml">คัดลอกโค้ด Dashboard (YAML)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="setFold setupCard" id="cardWebhook">
           <button type="button" class="setupHead setFoldHead" data-action="toggle-set-group" data-group="cardWebhook">
             <span>เชื่อมต่อระบบภายนอก (WebHook / Smart Home)</span>
@@ -439,20 +498,6 @@
                 <button type="button" class="hookBtn" data-action="copy-blynk-hook" data-slot="open">เปิด</button>
                 <button type="button" class="hookBtn" data-action="copy-blynk-hook" data-slot="stop">หยุด</button>
                 <button type="button" class="hookBtn" data-action="copy-blynk-hook" data-slot="close">ปิด</button>
-              </div>
-            </div>
-            <div class="hookSec">
-              <b>ระบบ Home Assistant (เครือข่ายในบ้าน)</b>
-              <div class="muted" style="margin-bottom:8px;font-size:12px">คัดลอกโค้ด YAML สำหรับใช้งานกับ Home Assistant ภายในบ้าน</div>
-              <div class="hookBtns">
-                <button type="button" class="hookBtn wide" data-action="copy-ha-lan">คัดลอกโค้ด (LAN)</button>
-              </div>
-            </div>
-            <div class="hookSec">
-              <b>ระบบ Home Assistant (อินเทอร์เน็ตนอกบ้าน)</b>
-              <div class="muted" style="margin-bottom:8px;font-size:12px">คัดลอกโค้ด YAML สำหรับสั่งงานผ่าน Blynk Cloud จากนอกบ้าน</div>
-              <div class="hookBtns">
-                <button type="button" class="hookBtn wide" data-action="copy-ha-blynk">คัดลอกโค้ด (อินเทอร์เน็ต)</button>
               </div>
             </div>
             <div class="hookSec">

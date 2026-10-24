@@ -136,6 +136,7 @@ async function refreshSettingsFromLive() {
     refreshSetupWizardUi(settings, State.blynkCache, State.tagCount);
     if (State.settingsPollTick % 4 === 0) {
       await refreshBlynkStatus();
+      if (typeof refreshMqttStatus === 'function') await refreshMqttStatus();
     }
   } catch (_) {}
 }
@@ -149,9 +150,10 @@ async function loadSettingsForm() {
     api('/api/tags').catch(() => ({ tags: [] })),
     api('/api/time').catch(() => ({})),
   ]);
-  const [blynk, sched] = await Promise.all([
+  const [blynk, sched, mqtt] = await Promise.all([
     api('/api/blynk').catch(() => ({})),
     api('/api/schedule').catch(() => ({ schedules: [] })),
+    api('/api/mqtt').catch(() => ({})),
   ]);
   if (tagsRes && Array.isArray(tagsRes.tags)) {
     State.tagCount = tagsRes.tags.length;
@@ -229,6 +231,7 @@ async function loadSettingsForm() {
       : 'รหัสอุปกรณ์จากแอป Blynk';
   }
   updateBlynkStatusUi(blynk);
+  if (typeof updateMqttUi === 'function') updateMqttUi(mqtt);
   const timeLbl = $('sysTimeLbl');
   if (timeLbl) timeLbl.textContent = time.localTime || (time.synced ? 'ซิงค์แล้ว' : 'ยังไม่ซิงค์');
   const timeHint = $('sysTimeHint');

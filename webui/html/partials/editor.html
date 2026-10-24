@@ -140,10 +140,17 @@
         <div id="edWebhookBody" class="hidden" style="margin-top:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px;">
           <label style="font-size:13px; color:var(--text-muted, #aaa); display:block; margin-bottom:4px">LINE User ID หรือ Webhook URL เฉพาะ Tag นี้</label>
           <div class="inpWrap">
-            <input id="edWebhookUrl" placeholder="เช่น U91a82c... (LINE ID) หรือ car-dad (ntfy)" maxlength="96" />
+            <input id="edWebhookUrl" placeholder="เช่น U91a82c... (LINE ID) หรือ auto (ntfy)" maxlength="96" />
             <span class="inpIcon">🔔</span>
           </div>
           <p class="edHint" style="margin-top:6px; font-size:12px">💡 ใส่ LINE User ID (ขึ้นต้นด้วย <code>U...</code>) เพื่อส่งตรงเข้าแชทส่วนตัว หรือใส่ Topic ntfy / URL (เว้นว่างเพื่อส่งเข้ากลุ่มส่วนกลาง)</p>
+
+          <div style="margin-top:10px; display:flex; flex-direction:column; gap:6px;">
+            <button type="button" class="hookBtn" id="btnEdWebhookTest" data-action="test-ed-webhook" style="width:100%; display:flex; justify-content:center; align-items:center; gap:6px; padding:9px 14px;">
+              <span>🧪</span> ทดสอบส่งการแจ้งเตือน
+            </button>
+            <div class="hint" id="edWebhookMsg" style="margin:0; font-size:12px; min-height:16px;"></div>
+          </div>
 
           <div style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08);">
             <label style="font-size:12px; font-weight:600; color:var(--text-muted, #aaa); display:block; margin-bottom:8px">เลือกเหตุการณ์ที่ต้องการให้ Tag นี้แจ้งเตือน:</label>

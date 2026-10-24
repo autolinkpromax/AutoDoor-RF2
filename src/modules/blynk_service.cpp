@@ -195,7 +195,4 @@ BLYNK_WRITE(V2) {
     requestDoorSlot("close", true);
   }
 }
-
-BLYNK_WRITE(V3) {
-  // V3 is dedicated for Magnetic Sensor status (1 = Closed, 0 = Open)
-}
+// Note: V3 is read-only (Magnetic Sensor status publish only — no write handler needed)

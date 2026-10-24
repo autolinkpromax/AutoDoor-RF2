@@ -2,6 +2,7 @@
 #include "app/config.h"
 #include "app/globals.h"
 #include "modules/blynk_service.h"
+#include "modules/mqtt_service.h"
 #include "modules/door.h"
 #include "modules/esp_now_runtime.h"
 #include "modules/ntp.h"
@@ -42,6 +43,18 @@ void ConfigApiController::registerRoutes() {
 
   _server.on("/api/blynk", HTTP_PUT, [this]() {
     wrap([this]() { handleBlynkPut(); });
+  });
+
+  _server.on("/api/mqtt", HTTP_GET, [this]() {
+    wrap([this]() { handleMqttGet(); });
+  });
+
+  _server.on("/api/mqtt", HTTP_PUT, [this]() {
+    wrap([this]() { handleMqttPut(); });
+  });
+
+  _server.on("/api/mqtt", HTTP_POST, [this]() {
+    wrap([this]() { handleMqttPut(); });
   });
 
   _server.on("/api/espnow/disable", HTTP_POST, [this]() {
@@ -375,6 +388,68 @@ void ConfigApiController::handleBlynkPut() {
   doc["templateId"] = gBlynkTemplateId;
   doc["deviceName"] = gBlynkDeviceName;
   doc["connected"] = gBlynkConnected;
+  sendJson(200, doc);
+}
+
+void ConfigApiController::handleMqttGet() {
+  JsonDocument doc;
+  doc["ok"] = true;
+  doc["enabled"] = gMqttConfig.enabled;
+  doc["host"] = gMqttConfig.host;
+  doc["port"] = gMqttConfig.port;
+  doc["user"] = gMqttConfig.user;
+  doc["pass"] = gMqttConfig.pass;
+  doc["topicPrefix"] = gMqttConfig.topicPrefix;
+  doc["discoveryPrefix"] = gMqttConfig.discoveryPrefix;
+  doc["connected"] = isMqttConnected();
+  doc["status"] = getMqttStatusText();
+  sendJson(200, doc);
+}
+
+void ConfigApiController::handleMqttPut() {
+  TagStoreLock lock;
+  JsonDocument body = parseBodyOrEmpty();
+  MqttConfig cfg = gMqttConfig;
+  if (!body["enabled"].isNull()) {
+    cfg.enabled = body["enabled"].as<bool>();
+  }
+  if (!body["host"].isNull()) {
+    cfg.host = body["host"].as<String>();
+    cfg.host.trim();
+  }
+  if (!body["port"].isNull()) {
+    cfg.port = (uint16_t)constrain(body["port"].as<int>(), 1, 65535);
+  }
+  if (!body["user"].isNull()) {
+    cfg.user = body["user"].as<String>();
+    cfg.user.trim();
+  }
+  if (!body["pass"].isNull()) {
+    cfg.pass = body["pass"].as<String>();
+  }
+  if (!body["topicPrefix"].isNull()) {
+    String t = body["topicPrefix"].as<String>();
+    t.trim();
+    if (!t.isEmpty()) cfg.topicPrefix = t;
+  }
+  if (!body["discoveryPrefix"].isNull()) {
+    String d = body["discoveryPrefix"].as<String>();
+    d.trim();
+    if (!d.isEmpty()) cfg.discoveryPrefix = d;
+  }
+  saveMqttConfig(cfg);
+
+  JsonDocument doc;
+  doc["ok"] = true;
+  doc["enabled"] = gMqttConfig.enabled;
+  doc["host"] = gMqttConfig.host;
+  doc["port"] = gMqttConfig.port;
+  doc["user"] = gMqttConfig.user;
+  doc["pass"] = gMqttConfig.pass;
+  doc["topicPrefix"] = gMqttConfig.topicPrefix;
+  doc["discoveryPrefix"] = gMqttConfig.discoveryPrefix;
+  doc["connected"] = isMqttConnected();
+  doc["status"] = getMqttStatusText();
   sendJson(200, doc);
 }
 

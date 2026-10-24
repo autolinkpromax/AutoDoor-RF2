@@ -18,6 +18,33 @@
 
 OutboundWebhookConfig gWebhookConfig;
 
+bool isLineTarget(const String& str) {
+  if (str.startsWith("line:")) return true;
+  if (str.length() >= 30 && (str.startsWith("U") || str.startsWith("C") || str.startsWith("R"))) {
+    return true;
+  }
+  return false;
+}
+
+String resolveWebhookUrl(const String& input) {
+  String u = input;
+  u.trim();
+  if (u.isEmpty()) return "";
+  if (isLineTarget(u)) {
+    if (u.startsWith("line:")) return u.substring(5);
+    return u;
+  }
+  if (u.startsWith("https://ntfy/")) return "https://ntfy.sh/" + u.substring(13);
+  if (u.startsWith("http://ntfy/")) return "https://ntfy.sh/" + u.substring(12);
+  if (u.startsWith("ntfy/")) return "https://ntfy.sh/" + u.substring(5);
+  if (u.startsWith("http://") || u.startsWith("https://")) return u;
+  if (u.startsWith("ntfy.sh/")) return "https://" + u;
+  while (u.startsWith("/")) {
+    u = u.substring(1);
+  }
+  return "https://ntfy.sh/" + u;
+}
+
 namespace {
 
 struct WebhookItem {
@@ -64,14 +91,6 @@ bool isNtfyUrl(const String& url) {
   return url.indexOf("ntfy.sh/") >= 0 || url.indexOf("/ntfy/") >= 0 || url.indexOf("ntfy.") >= 0 || url.startsWith("https://ntfy/") || url.startsWith("http://ntfy/");
 }
 
-bool isLineTarget(const String& str) {
-  if (str.startsWith("line:")) return true;
-  if (str.length() >= 30 && (str.startsWith("U") || str.startsWith("C") || str.startsWith("R"))) {
-    return true;
-  }
-  return false;
-}
-
 void formatLinePayload(const WebhookItem& item, const String& targetId, String& out) {
   JsonDocument doc;
   doc["to"] = targetId;
@@ -111,11 +130,14 @@ void outboundWebhookTask(void* param) {
   WebhookItem item;
   while (true) {
     if (xQueueReceive(sQueue, &item, pdMS_TO_TICKS(1000)) == pdTRUE) {
-      const String url = (item.targetUrl[0] != '\0') ? String(item.targetUrl) : gWebhookConfig.url;
-      if (!item.isTest && item.targetUrl[0] == '\0' && !gWebhookConfig.enabled) {
+      const String rawUrl = (item.targetUrl[0] != '\0') ? String(item.targetUrl) : gWebhookConfig.url;
+      const String url = resolveWebhookUrl(rawUrl);
+      const bool targetIsLine = isLineTarget(item.targetUrl[0] != '\0' ? item.targetUrl : gWebhookConfig.lineTargetId);
+
+      if (!item.isTest && item.targetUrl[0] == '\0' && !gWebhookConfig.enabled && !gWebhookConfig.lineEnabled) {
         continue;
       }
-      if (url.length() < 8) {
+      if (url.length() < 8 && !targetIsLine) {
         continue;
       }
 
@@ -134,10 +156,9 @@ void outboundWebhookTask(void* param) {
       sLastDispatchMs = millis();
 
       // 1. Check if item target is LINE or if LINE is enabled
-      const bool targetIsLine = isLineTarget(item.targetUrl);
       String lineTarget = "";
       if (targetIsLine) {
-        lineTarget = String(item.targetUrl);
+        lineTarget = String(item.targetUrl[0] != '\0' ? item.targetUrl : gWebhookConfig.lineTargetId.c_str());
         if (lineTarget.startsWith("line:")) lineTarget = lineTarget.substring(5);
       } else if (gWebhookConfig.lineEnabled && !gWebhookConfig.lineTargetId.isEmpty()) {
         lineTarget = gWebhookConfig.lineTargetId;
@@ -168,9 +189,8 @@ void outboundWebhookTask(void* param) {
       }
 
       // 3. Dispatch to Webhook URL (ntfy / Discord / Generic) if applicable (and not exclusively a LINE target ID)
-      if (!targetIsLine) {
-        const String url = (item.targetUrl[0] != '\0') ? String(item.targetUrl) : gWebhookConfig.url;
-        if ((item.isTest || item.targetUrl[0] != '\0' || gWebhookConfig.enabled) && url.length() >= 8) {
+      if (!targetIsLine && url.length() >= 8) {
+        if (item.isTest || item.targetUrl[0] != '\0' || gWebhookConfig.enabled) {
           String payload;
           const bool isDiscord = (url.indexOf("discord.com/api/webhooks") >= 0);
           const bool isNtfy    = isNtfyUrl(url);
@@ -198,14 +218,7 @@ void outboundWebhookTask(void* param) {
             http.setTimeout(2500);
             http.addHeader("Content-Type", contentType);
             http.addHeader("User-Agent", "AutoDoor-RF2");
-            if (isNtfy) {
-              http.addHeader("Title", "AutoDoor-RF2");
-              if (strcmp(item.event, "tag_open") == 0) http.addHeader("Tags", "door,green_circle");
-              else if (strcmp(item.event, "tag_closing") == 0) http.addHeader("Tags", "door,yellow_circle");
-              else if (strcmp(item.event, "tag_close") == 0) http.addHeader("Tags", "door,lock");
-              else if (strcmp(item.event, "safety") == 0) http.addHeader("Tags", "warning,rotating_light");
-              else if (strcmp(item.event, "open_warn") == 0) http.addHeader("Tags", "hourglass,warning");
-            }
+            // Note: ntfy sends plain text without Title or Tags header as requested
             httpCode = http.POST(payload);
             http.end();
             client.stop();
@@ -218,14 +231,7 @@ void outboundWebhookTask(void* param) {
             http.setTimeout(2500);
             http.addHeader("Content-Type", contentType);
             http.addHeader("User-Agent", "AutoDoor-RF2");
-            if (isNtfy) {
-              http.addHeader("Title", "AutoDoor-RF2");
-              if (strcmp(item.event, "tag_open") == 0) http.addHeader("Tags", "door,green_circle");
-              else if (strcmp(item.event, "tag_closing") == 0) http.addHeader("Tags", "door,yellow_circle");
-              else if (strcmp(item.event, "tag_close") == 0) http.addHeader("Tags", "door,lock");
-              else if (strcmp(item.event, "safety") == 0) http.addHeader("Tags", "warning,rotating_light");
-              else if (strcmp(item.event, "open_warn") == 0) http.addHeader("Tags", "hourglass,warning");
-            }
+            // Note: ntfy sends plain text without Title or Tags header as requested
             httpCode = http.POST(payload);
             http.end();
             client.stop();
@@ -233,7 +239,7 @@ void outboundWebhookTask(void* param) {
 
           sLastStatus = httpCode;
           sLastTimeMs = millis();
-          AD_LOG(Serial.printf("[wh_out] event=%s -> http=%d\n", item.event, httpCode));
+          AD_LOG(Serial.printf("[wh_out] event=%s url=%s -> http=%d\n", item.event, url.c_str(), httpCode));
         }
       }
     }
@@ -255,18 +261,6 @@ void outboundWebhookTask(void* param) {
   }
 }
 
-String resolveTagWebhookUrl(const String& customUrl) {
-  String u = customUrl;
-  u.trim();
-  if (u.isEmpty()) return "";
-  if (isLineTarget(u)) {
-    if (u.startsWith("line:")) return u.substring(5);
-    return u;
-  }
-  if (u.startsWith("http://") || u.startsWith("https://")) return u;
-  return "https://ntfy.sh/" + u;
-}
-
 class OutboundDoorListener : public IDoorListener {
 public:
   void onDoorStateChanged(DoorState oldState, DoorState newState) override {
@@ -280,7 +274,7 @@ public:
         sActiveDoorTagId = gActiveTriggerTagId;
         Tag* activeTag = gTagRegistry.findById(gActiveTriggerTagId);
         if (activeTag && activeTag->webhookEnabled && activeTag->webhookOpen) {
-          String customUrl = resolveTagWebhookUrl(activeTag->webhookUrl);
+          String customUrl = resolveWebhookUrl(activeTag->webhookUrl);
           const char* targetUrl = customUrl.isEmpty() ? nullptr : customUrl.c_str();
           String msg = "🟢 ประตูเริ่มเปิด (โดย: " + activeTag->name + ")";
           triggerOutboundWebhook("tag_open", "opening", msg.c_str(), activeTag->id.c_str(), activeTag->name.c_str(), targetUrl);
@@ -293,7 +287,7 @@ public:
       if (!sActiveDoorTagId.isEmpty()) {
         Tag* activeTag = gTagRegistry.findById(sActiveDoorTagId);
         if (activeTag && activeTag->webhookEnabled && activeTag->webhookClosing) {
-          String customUrl = resolveTagWebhookUrl(activeTag->webhookUrl);
+          String customUrl = resolveWebhookUrl(activeTag->webhookUrl);
           const char* targetUrl = customUrl.isEmpty() ? nullptr : customUrl.c_str();
           String msg = "🟡 ประตูกำลังปิด (จาก: " + activeTag->name + ")";
           triggerOutboundWebhook("tag_closing", "closing", msg.c_str(), activeTag->id.c_str(), activeTag->name.c_str(), targetUrl);
@@ -306,7 +300,7 @@ public:
       if (!sActiveDoorTagId.isEmpty()) {
         Tag* activeTag = gTagRegistry.findById(sActiveDoorTagId);
         if (activeTag && activeTag->webhookEnabled && activeTag->webhookClose) {
-          String customUrl = resolveTagWebhookUrl(activeTag->webhookUrl);
+          String customUrl = resolveWebhookUrl(activeTag->webhookUrl);
           const char* targetUrl = customUrl.isEmpty() ? nullptr : customUrl.c_str();
           String msg = "🔒 ประตูปิดสนิทเรียบร้อย (จาก: " + activeTag->name + ")";
           triggerOutboundWebhook("tag_close", "closed", msg.c_str(), activeTag->id.c_str(), activeTag->name.c_str(), targetUrl);
@@ -372,7 +366,8 @@ void initOutboundWebhook() {
 
 bool triggerOutboundWebhook(const char* event, const char* state, const char* message, const char* tagId, const char* tagName, const char* customUrl) {
   if (!sQueue || !event) return false;
-  const bool hasCustomUrl = (customUrl != nullptr && customUrl[0] != '\0');
+  String resolvedCustom = (customUrl != nullptr) ? resolveWebhookUrl(customUrl) : "";
+  const bool hasCustomUrl = !resolvedCustom.isEmpty();
   const bool hasWebhook = (hasCustomUrl || (gWebhookConfig.enabled && gWebhookConfig.url.length() >= 8));
   const bool hasLine = (gWebhookConfig.lineEnabled && gWebhookConfig.lineToken.length() >= 20);
   if (!hasWebhook && !hasLine) return false;
@@ -390,21 +385,38 @@ bool triggerOutboundWebhook(const char* event, const char* state, const char* me
   strncpy(item.message, message ? message : "", sizeof(item.message) - 1);
   if (tagId) strncpy(item.tagId, tagId, sizeof(item.tagId) - 1);
   if (tagName) strncpy(item.tagName, tagName, sizeof(item.tagName) - 1);
-  if (hasCustomUrl) strncpy(item.targetUrl, customUrl, sizeof(item.targetUrl) - 1);
+  if (hasCustomUrl) strncpy(item.targetUrl, resolvedCustom.c_str(), sizeof(item.targetUrl) - 1);
   item.timestamp = (uint32_t)time(nullptr);
   item.isTest = false;
 
   return (xQueueSend(sQueue, &item, 0) == pdTRUE);
 }
 
-bool triggerOutboundWebhookTest() {
+bool triggerOutboundWebhookTest(const char* customUrl, const char* tagName) {
   if (!sQueue) return false;
+
+  String resolvedUrl = (customUrl != nullptr) ? resolveWebhookUrl(customUrl) : "";
+  const bool hasCustomUrl = !resolvedUrl.isEmpty();
+  const bool hasGlobalWebhook = (gWebhookConfig.enabled && gWebhookConfig.url.length() >= 8);
+  const bool hasLine = (gWebhookConfig.lineEnabled && gWebhookConfig.lineToken.length() >= 20);
+
+  if (!hasCustomUrl && !hasGlobalWebhook && !hasLine) {
+    resolvedUrl = "https://ntfy.sh/" + resolveApSsid();
+  }
 
   WebhookItem item;
   memset(&item, 0, sizeof(item));
   strncpy(item.event, "test", sizeof(item.event) - 1);
   strncpy(item.state, "test", sizeof(item.state) - 1);
-  strncpy(item.message, "ทดสอบส่ง Webhook จาก AutoDoor-RF2 สำเร็จ! (ระบบเชื่อมต่อปกติ)", sizeof(item.message) - 1);
+  if (tagName && tagName[0] != '\0') {
+    snprintf(item.message, sizeof(item.message), "🧪 ทดสอบส่งการแจ้งเตือนสำเร็จ! (โดย: %s)", tagName);
+    strncpy(item.tagName, tagName, sizeof(item.tagName) - 1);
+  } else {
+    strncpy(item.message, "🧪 ทดสอบส่ง Webhook จาก AutoDoor-RF2 สำเร็จ! (ระบบเชื่อมต่อปกติ)", sizeof(item.message) - 1);
+  }
+  if (!resolvedUrl.isEmpty()) {
+    strncpy(item.targetUrl, resolvedUrl.c_str(), sizeof(item.targetUrl) - 1);
+  }
   item.timestamp = (uint32_t)time(nullptr);
   item.isTest = true;
 

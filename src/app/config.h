@@ -61,7 +61,7 @@ constexpr float kWifiTxPowerDbm = 18.0f;
 constexpr int8_t kWifiTxPower = static_cast<int8_t>(kWifiTxPowerDbm * 4.0f + 0.5f);
 
 
-constexpr const char* kFirmwareVersion = "1.0.0";
+constexpr const char* kFirmwareVersion = "1.0.1";
 constexpr const char* kFirmwareBuildDate = __DATE__ " " __TIME__;
 
 constexpr uint32_t kDefaultRelayPulseMs = 300;

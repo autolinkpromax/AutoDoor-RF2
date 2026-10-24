@@ -347,9 +347,26 @@ async function testOutboundWebhook() {
       method: 'POST',
       body
     });
-    const res = await api('/api/webhook/test', { method: 'POST' });
+    const res = await api('/api/webhook/test', {
+      method: 'POST',
+      body: { url: body.url }
+    });
     if (res.ok) {
-      setHint('whOutMsg', 'hint ok', 'ส่งข้อความทดสอบเข้าคิวแล้ว');
+      const targetDesc = res.target ? ` (${res.target})` : '';
+      setHint('whOutMsg', 'hint ok', 'ส่งข้อความทดสอบแล้ว' + targetDesc + '...');
+      setTimeout(async () => {
+        try {
+          const wh = await api('/api/webhook');
+          const st = wh?.outbound?.lastStatus;
+          if (st === 200) {
+            setHint('whOutMsg', 'hint ok', '✅ ส่งการแจ้งเตือนสำเร็จ (HTTP 200)');
+          } else if (st > 0) {
+            setHint('whOutMsg', 'hint err', `⚠️ เซิร์ฟเวอร์ตอบกลับรหัส: ${st}`);
+          } else if (st < 0) {
+            setHint('whOutMsg', 'hint err', `❌ เชื่อมต่อไปยังปลายทางไม่สำเร็จ (รหัสข้อผิดพลาด: ${st})`);
+          }
+        } catch (_) {}
+      }, 1200);
     } else {
       setHint('whOutMsg', 'hint err', 'ส่งไม่สำเร็จ: ' + (res.msg || 'error'));
     }

@@ -20,6 +20,8 @@ private:
   void handleSchedulePut();
   void handleBlynkGet();
   void handleBlynkPut();
+  void handleMqttGet();
+  void handleMqttPut();
   void handleEspNowDisable();
   void handleEspNowEnable();
 };

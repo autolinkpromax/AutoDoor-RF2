@@ -343,6 +343,9 @@ function onActionClick(e) {
     case 'save-editor':
       saveEditor();
       break;
+    case 'test-ed-webhook':
+      testEdWebhook();
+      break;
     case 'select-icon':
       selectIconChip(el.dataset.icon);
       break;
@@ -382,11 +385,17 @@ function onActionClick(e) {
     case 'save-blynk':
       saveBlynk();
       break;
+    case 'save-mqtt':
+      saveMqtt();
+      break;
     case 'copy-hook':
       copyHookUrl(el.dataset.slot);
       break;
     case 'copy-blynk-hook':
       copyBlynkHookUrl(el.dataset.slot);
+      break;
+    case 'copy-ha-dashboard':
+      copyHaDashboardYaml();
       break;
     case 'copy-ha-lan':
       copyHaLanYaml();
@@ -600,6 +609,9 @@ function onActionChange(e) {
       break;
     case 'toggle-blynk':
       toggleBlynk();
+      break;
+    case 'toggle-mqtt':
+      toggleMqtt();
       break;
     case 'toggle-auto-reboot':
       toggleAutoReboot();
@@ -2116,6 +2128,7 @@ function setEditorDefaults() {
   if ($('edWebhookClosing')) $('edWebhookClosing').checked = true;
   if ($('edWebhookClose')) $('edWebhookClose').checked = true;
   if ($('edWebhookUrl')) $('edWebhookUrl').value = '';
+  if ($('edWebhookMsg')) $('edWebhookMsg').textContent = '';
   toggleEdWebhook();
   selectIconChip('auto');
   updateEdRssiLbl();
@@ -2190,6 +2203,7 @@ async function openEditor(id) {
     if ($('edWebhookClosing')) $('edWebhookClosing').checked = (t.webhookClosing !== false);
     if ($('edWebhookClose')) $('edWebhookClose').checked = (t.webhookClose !== false);
     if ($('edWebhookUrl')) $('edWebhookUrl').value = t.webhookUrl || '';
+    if ($('edWebhookMsg')) $('edWebhookMsg').textContent = '';
     toggleEdWebhook();
 
     selectIconChip(t.icon || 'auto');
@@ -2331,6 +2345,74 @@ async function deleteTag() {
   await api('/api/tags/' + State.editingId, { method: 'DELETE' });
   State.deviceListKey = '';
   closeEditor();
+}
+
+async function testEdWebhook() {
+  const msgEl = $('edWebhookMsg');
+  const rawUrl = $('edWebhookUrl')?.value?.trim() || '';
+  const tagName = $('edName')?.value?.trim() || 'Tag';
+  const btn = $('btnEdWebhookTest');
+
+  if (msgEl) {
+    msgEl.className = 'hint';
+    msgEl.textContent = 'กำลังทดสอบส่งข้อความ...';
+  }
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await api('/api/webhook/test', {
+      method: 'POST',
+      body: {
+        url: rawUrl,
+        tagName: tagName
+      }
+    });
+
+    if (res.ok) {
+      const targetDesc = res.target ? `ไปยัง ${res.target}` : '';
+      if (msgEl) {
+        msgEl.className = 'hint ok';
+        msgEl.textContent = `ส่งคำขอทดสอบแล้ว ${targetDesc}...`;
+      }
+      setTimeout(async () => {
+        try {
+          const wh = await api('/api/webhook');
+          const st = wh?.outbound?.lastStatus;
+          if (st === 200) {
+            if (msgEl) {
+              msgEl.className = 'hint ok';
+              msgEl.textContent = '✅ ทดสอบส่งแจ้งเตือนสำเร็จ (HTTP 200)';
+            }
+          } else if (st > 0) {
+            if (msgEl) {
+              msgEl.className = 'hint err';
+              msgEl.textContent = `⚠️ ปลายทางตอบกลับ HTTP: ${st}`;
+            }
+          } else if (st < 0) {
+            if (msgEl) {
+              msgEl.className = 'hint err';
+              msgEl.textContent = `❌ เชื่อมต่อไม่สำเร็จ (รหัสการเชื่อมต่อ: ${st})`;
+            }
+          }
+        } catch (_) {
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      }, 1200);
+    } else {
+      if (msgEl) {
+        msgEl.className = 'hint err';
+        msgEl.textContent = 'ส่งไม่สำเร็จ: ' + (res.msg || 'คิวไม่ว่างหรือยังไม่ได้ตั้งค่า');
+      }
+      if (btn) btn.disabled = false;
+    }
+  } catch (e) {
+    if (msgEl) {
+      msgEl.className = 'hint err';
+      msgEl.textContent = 'เกิดข้อผิดพลาด: ' + (e.message || '');
+    }
+    if (btn) btn.disabled = false;
+  }
 }
 function renderScheduleList() {
   const el = $('scheduleList');
@@ -2725,6 +2807,173 @@ async function refreshBlynkStatus() {
     State.blynkCache = blynk;
     updateBlynkStatusUi(blynk);
   } catch (_) {}
+}
+function updateMqttStatusUi(mqtt) {
+  if (!mqtt) return;
+  const box = $('mqttStatusBox');
+  if (box) {
+    box.classList.remove('on', 'wait');
+    if (!mqtt.enabled) {
+      box.textContent = 'สถานะ: ปิดอยู่';
+    } else if (mqtt.connected) {
+      box.textContent = 'สถานะ: ' + (mqtt.status || 'เชื่อมต่อ MQTT สำเร็จ');
+      box.classList.add('on');
+    } else {
+      box.textContent = 'สถานะ: ' + (mqtt.status || 'กำลังเชื่อมต่อ…');
+      box.classList.add('wait');
+    }
+  }
+
+  const badge = $('mqttHeadBadge');
+  if (badge) {
+    if (!mqtt.enabled) {
+      badge.textContent = 'ปิดใช้งาน';
+      badge.className = 'badgeMini off';
+    } else if (mqtt.connected) {
+      badge.textContent = 'ออนไลน์';
+      badge.className = 'badgeMini ok';
+    } else {
+      badge.textContent = 'รอเชื่อมต่อ';
+      badge.className = 'badgeMini warn';
+    }
+  }
+}
+
+function updateMqttUi(mqtt) {
+  if (!mqtt) return;
+  if ($('swMqtt')) $('swMqtt').checked = !!mqtt.enabled;
+  if ($('mqttHost')) $('mqttHost').value = mqtt.host || '';
+  if ($('mqttPort')) $('mqttPort').value = mqtt.port || 1883;
+  if ($('mqttUser')) $('mqttUser').value = mqtt.user || '';
+  if ($('mqttPass')) $('mqttPass').value = mqtt.pass || '';
+  if ($('mqttTopicPrefix')) $('mqttTopicPrefix').value = mqtt.topicPrefix || 'autodoor';
+  if ($('mqttDiscPrefix')) $('mqttDiscPrefix').value = mqtt.discoveryPrefix || 'homeassistant';
+  if ($('haYamlPreview')) $('haYamlPreview').value = buildHaDashboardYaml();
+  updateMqttStatusUi(mqtt);
+}
+
+function cleanMqttHost(raw) {
+  if (!raw) return '';
+  let h = raw.trim();
+  h = h.replace(/^(http:\/\/|https:\/\/|mqtt:\/\/|mqtts:\/\/)/i, '');
+  h = h.split('/')[0];
+  h = h.split(':')[0];
+  return h.trim();
+}
+
+function mqttPayload(enabledOverride) {
+  const hostVal = cleanMqttHost($('mqttHost')?.value || '');
+  if ($('mqttHost') && hostVal) $('mqttHost').value = hostVal;
+  return {
+    enabled: enabledOverride != null ? enabledOverride : !!$('swMqtt')?.checked,
+    host: hostVal,
+    port: parseInt($('mqttPort')?.value || '1883', 10) || 1883,
+    user: ($('mqttUser')?.value || '').trim(),
+    pass: $('mqttPass')?.value || '',
+    topicPrefix: ($('mqttTopicPrefix')?.value || '').trim() || 'autodoor',
+    discoveryPrefix: ($('mqttDiscPrefix')?.value || '').trim() || 'homeassistant',
+  };
+}
+
+async function toggleMqtt() {
+  try {
+    const d = await api('/api/mqtt', { method: 'PUT', body: mqttPayload() });
+    updateMqttStatusUi(d);
+  } catch (e) {
+    if ($('mqttMsg')) $('mqttMsg').textContent = 'ตั้ง MQTT ไม่สำเร็จ';
+  }
+}
+
+async function saveMqtt() {
+  setHint('mqttMsg', 'hint', 'กำลังบันทึกและเชื่อมต่อ…');
+  try {
+    const d = await api('/api/mqtt', { method: 'PUT', body: mqttPayload() });
+    setHint('mqttMsg', 'hint ok', 'บันทึกการตั้งค่า MQTT สำเร็จ');
+    updateMqttStatusUi(d);
+  } catch (e) {
+    setHint('mqttMsg', 'hint err', 'บันทึกการตั้งค่า MQTT ไม่สำเร็จ');
+  }
+}
+
+async function refreshMqttStatus() {
+  try {
+    const mqtt = await api('/api/mqtt');
+    updateMqttStatusUi(mqtt);
+  } catch (_) {}
+}
+
+function buildHaDashboardYaml() {
+  return [
+    'type: vertical-stack',
+    'cards:',
+    '  # 1. แถบแสดงสถานะประตู',
+    '  - type: tile',
+    '    entity: sensor.autodoor_rf2_sthaanapratuu',
+    '    name: ประตูบ้าน (AutoDoor-RF2)',
+    '    icon: mdi:garage-variant',
+    '    color: blue',
+    '  # 2. แผงปุ่มควบคุมขนาดใหญ่ 3 ปุ่ม (เปิด / หยุด / ปิด)',
+    '  - type: grid',
+    '    columns: 3',
+    '    square: false',
+    '    cards:',
+    '      - type: button',
+    '        name: เปิดประตู',
+    '        icon: mdi:arrow-up-bold-box',
+    '        entity: button.autodoor_rf2_epidpratuu',
+    '        tap_action:',
+    '          action: toggle',
+    '      - type: button',
+    '        name: หยุดประตู',
+    '        icon: mdi:stop-circle',
+    '        entity: button.autodoor_rf2_hyudpratuu',
+    '        tap_action:',
+    '          action: toggle',
+    '      - type: button',
+    '        name: ปิดประตู',
+    '        icon: mdi:arrow-down-bold-box',
+    '        entity: button.autodoor_rf2_pidpratuu',
+    '        tap_action:',
+    '          action: toggle',
+    '  # 3. แผงข้อมูลเซนเซอร์',
+    '  - type: entities',
+    '    title: ข้อมูลเซนเซอร์',
+    '    show_header_toggle: false',
+    '    entities:',
+    '      - entity: binary_sensor.autodoor_safety_beam',
+    '        name: เซนเซอร์กันหนีบ (Safety Beam)',
+    '      - entity: sensor.autodoor_last_trigger',
+    '        name: รถ / รีโมตที่สั่งล่าสุด'
+  ].join('\n');
+}
+
+async function copyHaDashboardYaml() {
+  const yaml = buildHaDashboardYaml();
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(yaml);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = yaml;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    const btn = $('btnCopyHaYaml');
+    if (btn) {
+      const old = btn.textContent;
+      btn.textContent = '✓ คัดลอกสำเร็จ!';
+      btn.style.color = '#2ecc71';
+      setTimeout(() => {
+        btn.textContent = old;
+        btn.style.color = '';
+      }, 2500);
+    }
+    if (typeof toast === 'function') toast('คัดลอกโค้ด Lovelace Dashboard YAML เรียบร้อยแล้ว');
+  } catch (e) {
+    prompt('คัดลอกโค้ดนี้:', yaml);
+  }
 }
 function updateApStatusUi(r) {
   const el = $('apStatusHint');
@@ -3206,9 +3455,26 @@ async function testOutboundWebhook() {
       method: 'POST',
       body
     });
-    const res = await api('/api/webhook/test', { method: 'POST' });
+    const res = await api('/api/webhook/test', {
+      method: 'POST',
+      body: { url: body.url }
+    });
     if (res.ok) {
-      setHint('whOutMsg', 'hint ok', 'ส่งข้อความทดสอบเข้าคิวแล้ว');
+      const targetDesc = res.target ? ` (${res.target})` : '';
+      setHint('whOutMsg', 'hint ok', 'ส่งข้อความทดสอบแล้ว' + targetDesc + '...');
+      setTimeout(async () => {
+        try {
+          const wh = await api('/api/webhook');
+          const st = wh?.outbound?.lastStatus;
+          if (st === 200) {
+            setHint('whOutMsg', 'hint ok', '✅ ส่งการแจ้งเตือนสำเร็จ (HTTP 200)');
+          } else if (st > 0) {
+            setHint('whOutMsg', 'hint err', `⚠️ เซิร์ฟเวอร์ตอบกลับรหัส: ${st}`);
+          } else if (st < 0) {
+            setHint('whOutMsg', 'hint err', `❌ เชื่อมต่อไปยังปลายทางไม่สำเร็จ (รหัสข้อผิดพลาด: ${st})`);
+          }
+        } catch (_) {}
+      }, 1200);
     } else {
       setHint('whOutMsg', 'hint err', 'ส่งไม่สำเร็จ: ' + (res.msg || 'error'));
     }
@@ -3354,6 +3620,7 @@ async function refreshSettingsFromLive() {
     refreshSetupWizardUi(settings, State.blynkCache, State.tagCount);
     if (State.settingsPollTick % 4 === 0) {
       await refreshBlynkStatus();
+      if (typeof refreshMqttStatus === 'function') await refreshMqttStatus();
     }
   } catch (_) {}
 }
@@ -3367,9 +3634,10 @@ async function loadSettingsForm() {
     api('/api/tags').catch(() => ({ tags: [] })),
     api('/api/time').catch(() => ({})),
   ]);
-  const [blynk, sched] = await Promise.all([
+  const [blynk, sched, mqtt] = await Promise.all([
     api('/api/blynk').catch(() => ({})),
     api('/api/schedule').catch(() => ({ schedules: [] })),
+    api('/api/mqtt').catch(() => ({})),
   ]);
   if (tagsRes && Array.isArray(tagsRes.tags)) {
     State.tagCount = tagsRes.tags.length;
@@ -3447,6 +3715,7 @@ async function loadSettingsForm() {
       : 'รหัสอุปกรณ์จากแอป Blynk';
   }
   updateBlynkStatusUi(blynk);
+  if (typeof updateMqttUi === 'function') updateMqttUi(mqtt);
   const timeLbl = $('sysTimeLbl');
   if (timeLbl) timeLbl.textContent = time.localTime || (time.synced ? 'ซิงค์แล้ว' : 'ยังไม่ซิงค์');
   const timeHint = $('sysTimeHint');

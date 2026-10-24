@@ -33,6 +33,9 @@ function onActionClick(e) {
     case 'save-editor':
       saveEditor();
       break;
+    case 'test-ed-webhook':
+      testEdWebhook();
+      break;
     case 'select-icon':
       selectIconChip(el.dataset.icon);
       break;
@@ -72,11 +75,17 @@ function onActionClick(e) {
     case 'save-blynk':
       saveBlynk();
       break;
+    case 'save-mqtt':
+      saveMqtt();
+      break;
     case 'copy-hook':
       copyHookUrl(el.dataset.slot);
       break;
     case 'copy-blynk-hook':
       copyBlynkHookUrl(el.dataset.slot);
+      break;
+    case 'copy-ha-dashboard':
+      copyHaDashboardYaml();
       break;
     case 'copy-ha-lan':
       copyHaLanYaml();
@@ -290,6 +299,9 @@ function onActionChange(e) {
       break;
     case 'toggle-blynk':
       toggleBlynk();
+      break;
+    case 'toggle-mqtt':
+      toggleMqtt();
       break;
     case 'toggle-auto-reboot':
       toggleAutoReboot();

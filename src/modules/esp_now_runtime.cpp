@@ -17,7 +17,8 @@ namespace {
 bool gEspNowReady = false;
 uint32_t gLastChannelFixMs = 0;
 uint32_t gLastAnnounceMs = 0;
-constexpr uint32_t kAnnounceIntervalMs = 250;
+constexpr uint32_t kAnnounceIntervalMs = 250;       // Fast interval when tag is active
+constexpr uint32_t kAnnounceIntervalIdleMs = 1000;  // Slow interval when no tag active (saves 75% Wi-Fi TX)
 constexpr uint32_t kChannelFixIntervalMs = 2000;
 
 bool isValidBeacon(const uint8_t* data, int len, TagBeacon* out) {
@@ -317,10 +318,12 @@ void stepReceiverAnnounce() {
   if (!gEspNowReady) return;
   const uint32_t now = millis();
   const bool immediate = sPendingImmediateAnnounce;
+  // Use fast interval when any tag was recently active, slow interval when idle
+  const uint32_t baseInterval = gPrevAnyTagActive ? kAnnounceIntervalMs : kAnnounceIntervalIdleMs;
   if (immediate) {
     if ((uint32_t)(now - gLastAnnounceMs) < 25) return;
   } else {
-    if ((uint32_t)(now - gLastAnnounceMs) < kAnnounceIntervalMs) return;
+    if ((uint32_t)(now - gLastAnnounceMs) < baseInterval) return;
   }
 
   // Smart RF Collision Avoidance: if 433MHz receiver is currently receiving an RF frame from remote,

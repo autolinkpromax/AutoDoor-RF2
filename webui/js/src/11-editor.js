@@ -65,6 +65,7 @@ function setEditorDefaults() {
   if ($('edWebhookClosing')) $('edWebhookClosing').checked = true;
   if ($('edWebhookClose')) $('edWebhookClose').checked = true;
   if ($('edWebhookUrl')) $('edWebhookUrl').value = '';
+  if ($('edWebhookMsg')) $('edWebhookMsg').textContent = '';
   toggleEdWebhook();
   selectIconChip('auto');
   updateEdRssiLbl();
@@ -139,6 +140,7 @@ async function openEditor(id) {
     if ($('edWebhookClosing')) $('edWebhookClosing').checked = (t.webhookClosing !== false);
     if ($('edWebhookClose')) $('edWebhookClose').checked = (t.webhookClose !== false);
     if ($('edWebhookUrl')) $('edWebhookUrl').value = t.webhookUrl || '';
+    if ($('edWebhookMsg')) $('edWebhookMsg').textContent = '';
     toggleEdWebhook();
 
     selectIconChip(t.icon || 'auto');
@@ -280,4 +282,72 @@ async function deleteTag() {
   await api('/api/tags/' + State.editingId, { method: 'DELETE' });
   State.deviceListKey = '';
   closeEditor();
+}
+
+async function testEdWebhook() {
+  const msgEl = $('edWebhookMsg');
+  const rawUrl = $('edWebhookUrl')?.value?.trim() || '';
+  const tagName = $('edName')?.value?.trim() || 'Tag';
+  const btn = $('btnEdWebhookTest');
+
+  if (msgEl) {
+    msgEl.className = 'hint';
+    msgEl.textContent = 'กำลังทดสอบส่งข้อความ...';
+  }
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await api('/api/webhook/test', {
+      method: 'POST',
+      body: {
+        url: rawUrl,
+        tagName: tagName
+      }
+    });
+
+    if (res.ok) {
+      const targetDesc = res.target ? `ไปยัง ${res.target}` : '';
+      if (msgEl) {
+        msgEl.className = 'hint ok';
+        msgEl.textContent = `ส่งคำขอทดสอบแล้ว ${targetDesc}...`;
+      }
+      setTimeout(async () => {
+        try {
+          const wh = await api('/api/webhook');
+          const st = wh?.outbound?.lastStatus;
+          if (st === 200) {
+            if (msgEl) {
+              msgEl.className = 'hint ok';
+              msgEl.textContent = '✅ ทดสอบส่งแจ้งเตือนสำเร็จ (HTTP 200)';
+            }
+          } else if (st > 0) {
+            if (msgEl) {
+              msgEl.className = 'hint err';
+              msgEl.textContent = `⚠️ ปลายทางตอบกลับ HTTP: ${st}`;
+            }
+          } else if (st < 0) {
+            if (msgEl) {
+              msgEl.className = 'hint err';
+              msgEl.textContent = `❌ เชื่อมต่อไม่สำเร็จ (รหัสการเชื่อมต่อ: ${st})`;
+            }
+          }
+        } catch (_) {
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      }, 1200);
+    } else {
+      if (msgEl) {
+        msgEl.className = 'hint err';
+        msgEl.textContent = 'ส่งไม่สำเร็จ: ' + (res.msg || 'คิวไม่ว่างหรือยังไม่ได้ตั้งค่า');
+      }
+      if (btn) btn.disabled = false;
+    }
+  } catch (e) {
+    if (msgEl) {
+      msgEl.className = 'hint err';
+      msgEl.textContent = 'เกิดข้อผิดพลาด: ' + (e.message || '');
+    }
+    if (btn) btn.disabled = false;
+  }
 }

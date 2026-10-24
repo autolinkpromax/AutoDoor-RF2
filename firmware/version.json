@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
-  "releaseDate": "2026-10-15 12:06:44 UTC",
+  "version": "1.0.1",
+  "releaseDate": "2026-10-23 17:27:09 UTC",
   "targetChip": "ESP32-C3",
   "file": "firmware_autodoor_ota.bin",
-  "changelog": "เพิ่มฟังก์ชันอัปเดตเฟิร์มแวร์ออนไลน์ (Online OTA Update) จาก GitHub โดยตรงผ่านหน้าตั้งค่า และปรับปรุงความเสถียรของระบบ"
+  "changelog": "V1.0.1: ปรับปรุงประสิทธิภาพลูป RF433 ลดภาระ CPU, ปรับลดความถี่ ESP-NOW announce อัตโนมัติ (Adaptive 250ms/1000ms) ประหยัดแบตเตอรี่แท็กและลดการใช้คลื่น 2.4GHz, ปรับปรุงความเสถียรของระบบ"
 }
