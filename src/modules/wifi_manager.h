@@ -14,6 +14,7 @@ bool persistEspNowChannel(uint8_t ch);
 void stepEspNowChannelSync();
 void stepWiFiReconnect();
 void stepApIdle();
+void stepDnsServer();
 void startSoftAp();
 String resolveApSsid();
 void invalidateStaSsidCache();

@@ -17,7 +17,11 @@ async function loadWebAuthUi() {
         authBadge.className = 'badgeMini off';
       }
     }
+    State.webAuthHasPassword = !!r.hasPassword;
     updateSafeModeBanner(!!r.safeMode);
+    if (typeof refreshSetupWizardUi === 'function') {
+      refreshSetupWizardUi(State.settingsCache, State.blynkCache, State.tagCount);
+    }
   } catch (_) {}
 }
 

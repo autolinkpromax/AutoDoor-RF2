@@ -22,12 +22,12 @@ inline void initDoorSensorsOnBoot() {
   gDoorController.init();
 }
 
-inline bool requestDoorSlot(const String& slot, bool manualCommand, bool manualHold = false, const char* tagId = nullptr) {
-  return gDoorController.requestSlot(slot, manualCommand, manualHold, tagId);
+inline bool requestDoorSlot(const String& slot, bool manualCommand, bool manualHold = false, const char* tagId = nullptr, bool bypassPreStop = false) {
+  return gDoorController.requestSlot(slot, manualCommand, manualHold, tagId, bypassPreStop);
 }
 
-inline bool requestDoorAction(DoorCmdAction action, bool manualCommand, bool manualHold = false, const char* tagId = nullptr) {
-  return gDoorController.requestAction(action, manualCommand, manualHold, tagId);
+inline bool requestDoorAction(DoorCmdAction action, bool manualCommand, bool manualHold = false, const char* tagId = nullptr, bool bypassPreStop = false) {
+  return gDoorController.requestAction(action, manualCommand, manualHold, tagId, bypassPreStop);
 }
 
 inline bool executeDoorSlot(const String& slot, bool manualCommand, bool manualHold = false, bool bypassPreStop = false) {

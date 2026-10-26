@@ -26,4 +26,7 @@ private:
   void handleWebhookGet();
   void handleWebhookSave();
   void handleWebhookTest();
+  void handleResetService();
+  void handleMaintenanceSettings();
+  void handleFactoryReset();
 };

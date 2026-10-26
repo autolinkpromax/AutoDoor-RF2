@@ -8,6 +8,7 @@
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include <ESPmDNS.h>
+#include <DNSServer.h>
 
 namespace {
 
@@ -247,6 +248,17 @@ void stepEspNowChannelSync() {
   persistEspNowChannel((uint8_t)ch);
 }
 
+static DNSServer sDnsServer;
+static bool sDnsRunning = false;
+
+static void stopDnsServer() {
+  if (sDnsRunning) {
+    sDnsServer.stop();
+    sDnsRunning = false;
+    AD_LOG(Serial.println("[dns] Captive portal DNS server stopped"));
+  }
+}
+
 String resolveApSsid() {
   const String custom = gPrefs.getString("apSsid", "");
   if (!custom.isEmpty()) return custom;
@@ -259,6 +271,7 @@ String resolveApSsid() {
 void startSoftAp() {
   if (!gSafeMode && !apUserEnabled()) {
     if (gApEnabled) {
+      stopDnsServer();
       WiFi.softAPdisconnect(true);
       gApEnabled = false;
       AD_LOG(Serial.println("[ap] disabled by user setting"));
@@ -266,6 +279,7 @@ void startSoftAp() {
     return;
   }
   if (gApEnabled) {
+    stopDnsServer();
     WiFi.softAPdisconnect(true);
     gApEnabled = false;
     delay(80);
@@ -281,7 +295,21 @@ void startSoftAp() {
     Serial.printf("[ap] ssid=%s pass=%s ch=%u ip=%s\n", ssid.c_str(), pass.c_str(),
                   (unsigned)gEspNowChannel, WiFi.softAPIP().toString().c_str());
   }
+  if (gApEnabled) {
+    if (!sDnsRunning) {
+      sDnsServer.setErrorReplyCode(DNSReplyCode::NoError);
+      sDnsServer.start(53, "*", WiFi.softAPIP());
+      sDnsRunning = true;
+      AD_LOG(Serial.println("[dns] Captive portal DNS server started on port 53"));
+    }
+  }
   gApLastHadStationsMs = millis();
+}
+
+void stepDnsServer() {
+  if (sDnsRunning) {
+    sDnsServer.processNextRequest();
+  }
 }
 
 void stepApIdle() {
@@ -300,6 +328,7 @@ void stepApIdle() {
   if (gApLastHadStationsMs == 0) gApLastHadStationsMs = now;
   const uint32_t idleMs = (uint32_t)apIdleMinutes() * 60000UL;
   if ((uint32_t)(now - gApLastHadStationsMs) >= idleMs) {
+    stopDnsServer();
     WiFi.softAPdisconnect(true);
     gApEnabled = false;
     AD_LOG(Serial.printf("[ap] auto-off idle %u min\n", (unsigned)apIdleMinutes()));

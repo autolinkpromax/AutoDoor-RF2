@@ -17,8 +17,8 @@ HttpApiServer::HttpApiServer(WebServer& server)
       _eventsController(server) {}
 
 void HttpApiServer::begin() {
-  const char* headerKeys[] = {"Cookie", "Authorization"};
-  _server.collectHeaders(headerKeys, 2);
+  const char* headerKeys[] = {"Cookie", "Authorization", "Host"};
+  _server.collectHeaders(headerKeys, 3);
 
   _doorController.registerRoutes();
   _tagsController.registerRoutes();
@@ -41,5 +41,21 @@ void HttpApiServer::handleNotFound() {
     handleWebUiIndex();
     return;
   }
+
+  // Captive Portal Redirect for SoftAP clients
+  if (gApEnabled && _server.client().localIP() == WiFi.softAPIP()) {
+    const String host = _server.hostHeader();
+    const String apIp = WiFi.softAPIP().toString();
+    const String uri = _server.uri();
+
+    if ((!host.isEmpty() && host != apIp && !host.startsWith("autolink")) ||
+        uri == "/hotspot-detect.html" || uri == "/generate_204" || uri == "/gen_204" ||
+        uri == "/connecttest.txt" || uri == "/ncsi.txt" || uri == "/mobile/status.php") {
+      _server.sendHeader("Location", String("http://") + apIp + "/", true);
+      _server.send(302, "text/plain", "");
+      return;
+    }
+  }
+
   _server.send(404, "text/plain", "not found");
 }

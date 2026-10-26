@@ -42,11 +42,28 @@ def bundle_app_js() -> None:
 
 
 def minify_text(text: str, ext: str) -> str:
-    if ext in (".css", ".js"):
-        lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
-        return "\n".join(lines)
     if ext == ".html":
-        return re.sub(r">\s+<", "><", text.strip())
+        text = re.sub(r"<!--[\s\S]*?-->", "", text)
+        text = re.sub(r">\s+<", "><", text.strip())
+        text = re.sub(r"[ \t]{2,}", " ", text)
+        lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+        return "".join(lines)
+    if ext == ".css":
+        text = re.sub(r"/\*[\s\S]*?\*/", "", text)
+        text = re.sub(r"\s*([\{\}:;,])\s*", r"\1", text)
+        text = re.sub(r";\}", "}", text)
+        lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+        return "".join(lines)
+    if ext == ".js":
+        text = re.sub(r"/\*[\s\S]*?\*/", "", text)
+        lines = [ln.strip() for ln in text.splitlines() if ln.strip() and not ln.strip().startswith("//")]
+        text = "\n".join(lines)
+        text = re.sub(r"[ \t]{2,}", " ", text)
+        text = re.sub(r";\s+", ";", text)
+        text = re.sub(r",\s+", ",", text)
+        text = re.sub(r"\{\s+", "{", text)
+        text = re.sub(r"\s+\}", "}", text)
+        return text
     return text
 
 MIME = {

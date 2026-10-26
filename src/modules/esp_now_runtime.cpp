@@ -17,8 +17,8 @@ namespace {
 bool gEspNowReady = false;
 uint32_t gLastChannelFixMs = 0;
 uint32_t gLastAnnounceMs = 0;
-constexpr uint32_t kAnnounceIntervalMs = 250;       // Fast interval when tag is active
-constexpr uint32_t kAnnounceIntervalIdleMs = 1000;  // Slow interval when no tag active (saves 75% Wi-Fi TX)
+constexpr uint32_t kAnnounceIntervalMs = 250;      // Fast interval when tag is active
+constexpr uint32_t kAnnounceIntervalIdleMs = 500;  // Idle interval — 500ms ให้ tag ที่ dwell 60ms/ch มีโอกาสได้ยิน announce ก่อน hop
 constexpr uint32_t kChannelFixIntervalMs = 2000;
 
 bool isValidBeacon(const uint8_t* data, int len, TagBeacon* out) {
@@ -212,7 +212,7 @@ void ensureEspNowChannel() {
 void initEspNow() {
   if (gSafeMode || gEspNowDisabled) return;
   if (sEspNowRxQueue == nullptr) {
-    sEspNowRxQueue = xQueueCreate(16, sizeof(EspNowRxPacket));
+    sEspNowRxQueue = xQueueCreate(32, sizeof(EspNowRxPacket));  // 32 entries (~544 bytes) ป้องกัน drop ช่วง multi-tag burst
   }
   if (esp_now_init() != ESP_OK) {
     Serial.println("FATAL: esp_now_init failed");

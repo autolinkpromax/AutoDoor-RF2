@@ -57,11 +57,11 @@ constexpr uint8_t kEspNowChannel = 9;
 //   10.0 dBm -> ค่า 40 (กำลังส่งต่ำสุด)
 //
 // ปรับค่า dBm ได้โดยตรงที่ kWifiTxPowerDbm บรรทัดนี้ (ระบบคำนวณสเต็ปให้อัตโนมัติ):
-constexpr float kWifiTxPowerDbm = 18.0f;
+constexpr float kWifiTxPowerDbm = 19.5f;  // Max ESP32-C3 (78) — hub announce ไปถึง tag ที่ขอบระยะไกลขึ้น
 constexpr int8_t kWifiTxPower = static_cast<int8_t>(kWifiTxPowerDbm * 4.0f + 0.5f);
 
 
-constexpr const char* kFirmwareVersion = "1.0.1";
+constexpr const char* kFirmwareVersion = "1.0.2";
 constexpr const char* kFirmwareBuildDate = __DATE__ " " __TIME__;
 
 constexpr uint32_t kDefaultRelayPulseMs = 300;

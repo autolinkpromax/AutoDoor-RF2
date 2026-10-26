@@ -103,6 +103,7 @@ struct DoorCommand {
   DoorCmdAction action;
   bool isManual;
   bool manualHold;
+  bool bypassPreStop = false;
   char tagId[16] = {0};
 };
 

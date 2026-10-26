@@ -141,3 +141,11 @@ bool ensureWebAuth() {
   gServer.send(401, "application/json", "{\"ok\":false,\"error\":\"auth_required\"}");
   return false;
 }
+
+void clearWebAuthPassword() {
+  TagStoreLock lock;
+  gWebPassword = "";
+  gPrefs.remove("webPass");
+  revokeAllWebSessions();
+  AD_LOG(Serial.println("[auth] Web password cleared (factory reset)"));
+}

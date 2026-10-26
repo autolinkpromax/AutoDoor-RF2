@@ -88,7 +88,7 @@ void DoorController::initCommandQueue() {
   }
 }
 
-bool DoorController::requestAction(DoorCmdAction action, bool manualCommand, bool manualHold, const char* tagId) {
+bool DoorController::requestAction(DoorCmdAction action, bool manualCommand, bool manualHold, const char* tagId, bool bypassPreStop) {
   if (tagId && tagId[0] != '\0') {
     TagStoreLock lock;
     Tag* t = _tagRegistry.findById(tagId);
@@ -107,6 +107,7 @@ bool DoorController::requestAction(DoorCmdAction action, bool manualCommand, boo
   cmd.action = action;
   cmd.isManual = manualCommand;
   cmd.manualHold = manualHold;
+  cmd.bypassPreStop = bypassPreStop;
   if (tagId && tagId[0] != '\0') {
     strncpy(cmd.tagId, tagId, sizeof(cmd.tagId) - 1);
     cmd.tagId[sizeof(cmd.tagId) - 1] = '\0';
@@ -116,11 +117,11 @@ bool DoorController::requestAction(DoorCmdAction action, bool manualCommand, boo
   return xQueueSend(_cmdQueue, &cmd, 0) == pdTRUE;
 }
 
-bool DoorController::requestSlot(const char* slot, bool manualCommand, bool manualHold, const char* tagId) {
+bool DoorController::requestSlot(const char* slot, bool manualCommand, bool manualHold, const char* tagId, bool bypassPreStop) {
   if (!slot) return false;
-  if (strcmp(slot, "open") == 0) return requestAction(DoorCmdAction::Open, manualCommand, manualHold, tagId);
-  if (strcmp(slot, "close") == 0) return requestAction(DoorCmdAction::Close, manualCommand, manualHold, tagId);
-  if (strcmp(slot, "stop") == 0) return requestAction(DoorCmdAction::Stop, manualCommand, manualHold, tagId);
+  if (strcmp(slot, "open") == 0) return requestAction(DoorCmdAction::Open, manualCommand, manualHold, tagId, bypassPreStop);
+  if (strcmp(slot, "close") == 0) return requestAction(DoorCmdAction::Close, manualCommand, manualHold, tagId, bypassPreStop);
+  if (strcmp(slot, "stop") == 0) return requestAction(DoorCmdAction::Stop, manualCommand, manualHold, tagId, bypassPreStop);
   return false;
 }
 
@@ -349,16 +350,16 @@ bool DoorController::executeClose(bool manualCommand, bool manualHold, bool bypa
 
   const DoorState prevSt = _doorState;
 
-  // If already closed, nothing to do
-  if (_doorState == DoorState::Closed) {
+  // If already closed, nothing to do (unless forced/calibrating with bypassPreStop)
+  if (_doorState == DoorState::Closed && !bypassPreStop) {
     return true;
   }
   // If already closing, ignore duplicate auto close requests (allow manual re-pulse)
-  if (_doorState == DoorState::Closing && !manualCommand) {
+  if (_doorState == DoorState::Closing && !manualCommand && !bypassPreStop) {
     return true;
   }
-  // If a close deadband sequence is already running, avoid restarting it
-  if (_reversal.isReversingToClose()) {
+  // If a close deadband sequence is already running, avoid restarting it (unless forced)
+  if (_reversal.isReversingToClose() && !bypassPreStop) {
     return true;
   }
 
@@ -401,9 +402,9 @@ bool DoorController::executeClose(bool manualCommand, bool manualHold, bool bypa
                   (unsigned long)(now - _doorMotionStoppedAtMs), (unsigned long)deadbandMs);
   }
 
-  // Step 2: Fired after deadband expires OR directly when already stopped >= 2.4s -> Send physical CLOSE pulse
+  // Step 2: Fired after deadband expires OR directly when already stopped >= 2.4s OR when bypassPreStop -> Send physical CLOSE pulse
   _reversal.cancel();
-  const uint32_t closePulseWidth = (bypassPreStop || prevSt == DoorState::Stopped || prevSt == DoorState::Opening) ? kReversePulseMs : gRelayPulseMs;
+  const uint32_t closePulseWidth = (bypassPreStop || prevSt == DoorState::Stopped || prevSt == DoorState::Opening) ? max((uint32_t)500, gRelayPulseMs) : gRelayPulseMs;
   const bool ok = pulseSlot("close", closePulseWidth);
   if (ok) {
     gLastDoorAutoTxMs = now;
@@ -464,7 +465,7 @@ void DoorController::processLayer1Sensors(uint32_t now) {
       } else if (cmd.isManual) {
         gActiveTriggerTagId = "";
       }
-      executeSlot(slot, cmd.isManual, cmd.manualHold);
+      executeSlot(slot, cmd.isManual, cmd.manualHold, cmd.bypassPreStop);
     }
   }
 

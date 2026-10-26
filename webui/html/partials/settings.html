@@ -9,13 +9,22 @@
     <div class="card setupCard" id="setupWizardCard">
       <button type="button" class="setupHead" data-action="toggle-setup-wizard">
         <span>ตัวช่วยตั้งค่าเริ่มต้น</span>
-        <span class="setupHeadMeta"><span id="setupProg">0/3</span><span class="setupChev" id="setupChev">▼</span></span>
+        <span class="setupHeadMeta"><span id="setupProg">0/5</span><span class="setupChev" id="setupChev">▼</span></span>
       </button>
       <div id="setupBody" class="setupBody collapsed">
         <div class="setupGuideCard" id="setupCardWifi">
           <div class="setupGuideTitle"><span class="setupCheck">✓</span><b>ตั้งค่า Wi‑Fi บ้าน</b></div>
           <p class="setupGuideSub" id="setupSubWifi">เชื่อมต่อ Wi‑Fi บ้านเพื่อสั่งงานผ่านแอปและตั้งเวลาอัตโนมัติ</p>
           <button type="button" class="btnPri" data-action="setup-go-wifi">ไปที่การตั้งค่า Wi‑Fi</button>
+        </div>
+        <div class="setupGuideCard" id="setupCardMotor">
+          <div class="setupGuideTitle"><span class="setupCheck">✓</span><b>ทิศทางมอเตอร์</b></div>
+          <p class="setupGuideSub" id="setupSubMotor">ตรวจสอบทิศทางเปิด-ปิด หากประตูปิดแทนที่จะเปิด สามารถสลับทิศทางได้ทันที</p>
+          <div class="setupGuideBtns" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px;">
+            <button type="button" class="btnPri" data-action="wizard-test-open" id="btnWizTestOpen">ทดสอบเปิดประตู</button>
+            <button type="button" class="btnSec" data-action="wizard-toggle-motor-reverse" id="btnWizReverseMotor">สลับทิศทางมอเตอร์</button>
+          </div>
+          <div class="hint" id="wizMotorMsg" style="margin-top:6px;"></div>
         </div>
         <div class="setupGuideCard" id="setupCardTag">
           <div class="setupGuideTitle"><span class="setupCheck">✓</span><b>เพิ่ม Tag</b></div>
@@ -29,6 +38,19 @@
             <button type="button" class="btnPri" data-action="setup-go-blynk">ไปที่การตั้งค่า Blynk</button>
             <button type="button" class="btnGhost" data-action="external-link" data-href="https://blynk.cloud/">เปิดเว็บ blynk.cloud ↗</button>
           </div>
+        </div>
+        <div class="setupGuideCard" id="setupCardAdminPin">
+          <div class="setupGuideTitle"><span class="setupCheck">✓</span><b>รหัสผ่านความปลอดภัย (Admin PIN)</b></div>
+          <p class="setupGuideSub" id="setupSubAdminPin">ป้องกันบุคคลอื่นในวง Wi‑Fi แอบสั่งเปิดประตูหรือแก้ไขการตั้งค่า</p>
+          <div class="pwWrap" style="margin-top:8px; max-width:320px;">
+            <input id="wizAdminPass" type="password" placeholder="ตั้งรหัสผ่านใหม่ (อย่างน้อย 4 ตัว)" spellcheck="false" autocomplete="off" />
+            <button type="button" class="pwToggle" data-action="toggle-pw" data-target="wizAdminPass" aria-label="แสดงรหัสผ่าน" title="แสดง/ซ่อน"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+          <div class="setupGuideBtns" style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btnPri" data-action="wizard-save-admin-pin" id="btnWizSavePin">บันทึกรหัสผ่าน</button>
+            <button type="button" class="btnGhost" data-action="setup-go-webauth">ไปที่ตั้งค่ารหัสผ่าน ↗</button>
+          </div>
+          <div class="hint" id="wizAdminPinMsg" style="margin-top:6px;"></div>
         </div>
       </div>
     </div>
@@ -258,6 +280,71 @@
                   <div class="hint" id="autoRetryParamsMsg" style="margin-bottom:4px"></div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ตั้งเวลาเปิด-ปิดประตู -->
+        <div class="setFold setupCard" id="cardSchedule">
+          <button type="button" class="setupHead setFoldHead" data-action="toggle-set-group" data-group="cardSchedule">
+            <span>ตั้งเวลาเปิด-ปิดประตู</span>
+            <span class="setupHeadMeta"><span id="schedHeadBadge" class="badgeMini">0 เวลา</span><span class="setupChev">▼</span></span>
+          </button>
+          <div id="cardScheduleBody" class="setupBody collapsed">
+            <p class="muted" style="margin:0 0 12px;font-size:12px;line-height:1.45">สั่งเปิดหรือปิดประตูอัตโนมัติตามวันและเวลาที่กำหนด</p>
+            <div id="scheduleList"></div>
+            <button type="button" class="btnOutline" style="margin-top:8px" data-action="add-schedule">+ เพิ่มเวลาทำงาน</button>
+            <button type="button" class="btnPri btnSchedSave" data-action="save-schedules">บันทึกตารางเวลา</button>
+            <div class="hint" id="schedMsg"></div>
+          </div>
+        </div>
+
+        <!-- การบำรุงรักษาและรอบการใช้งาน (Cycle Counter) -->
+        <div class="setFold setupCard" id="cardMaintenance">
+          <button type="button" class="setupHead setFoldHead" data-action="toggle-set-group" data-group="cardMaintenance">
+            <span>การบำรุงรักษาและรอบการใช้งาน (Cycle Counter)</span>
+            <span class="setupHeadMeta"><span id="maintHeadBadge" class="badgeMini">0 รอบ</span><span class="setupChev">▼</span></span>
+          </button>
+          <div id="cardMaintenanceBody" class="setupBody collapsed">
+            <div id="maintAlertBanner" class="hidden" style="background:rgba(245, 158, 11, 0.15); border:1px solid #f59e0b; border-radius:10px; padding:12px; margin-bottom:12px;">
+              <b style="color:#f59e0b; display:flex; align-items:center; gap:6px;">
+                <span>⚠️</span> ถึงกำหนดตรวจเช็คระยะประตู!
+              </b>
+              <div style="font-size:12px; margin-top:4px; line-height:1.5;">
+                ประตูทำงานครบกำหนดรอบที่ตั้งไว้ กรุณาตรวจเช็คความตึงโซ่ ลูกล้อ รางเลื่อน และหยอดจาระบีหล่อลื่น
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+              <div style="background:rgba(255,255,255,0.03); border:1px solid var(--line); border-radius:10px; padding:10px; text-align:center;">
+                <div class="muted" style="font-size:11px; margin-bottom:2px;">รอบสะสมตลอดชีพ (Odometer)</div>
+                <div id="maintTotalCycles" style="font-size:18px; font-weight:700; color:var(--pri);">0</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03); border:1px solid var(--line); border-radius:10px; padding:10px; text-align:center;">
+                <div class="muted" style="font-size:11px; margin-bottom:2px;">รอบตั้งแต่เช็คระยะล่าสุด</div>
+                <div id="maintServiceCycles" style="font-size:18px; font-weight:700; color:#10b981;">0</div>
+              </div>
+            </div>
+
+            <div class="muted" style="font-size:12px; margin-bottom:10px;">
+              <span>วันที่ตรวจเช็คล่าสุด: </span><b id="maintLastDate">—</b>
+            </div>
+
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+              <button type="button" class="btnPri" data-action="reset-service-reminder" id="btnResetService" style="background:#10b981;">
+                ✓ บันทึกการเช็คระยะแล้ว (รีเซ็ตการเตือน)
+              </button>
+            </div>
+            <div class="hint" id="maintResetMsg"></div>
+
+            <div style="border-top:1px solid var(--line); padding-top:12px; margin-top:10px;">
+              <label style="display:block; margin-bottom:6px; font-weight:bold; font-size:13px;">เตือนตรวจเช็คทุกๆ (รอบ)</label>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <input id="maintThresholdInp" type="number" min="100" max="100000" step="500" value="5000" style="width:110px; box-sizing:border-box;" />
+                <span class="muted" style="font-size:12px">รอบ (ค่าแนะนำ 3,000 - 5,000 รอบ)</span>
+              </div>
+              <button type="button" class="btnSec" style="margin-top:8px" data-action="save-maintenance-threshold">บันทึกรอบแจ้งเตือน</button>
+              <div class="hint" id="maintThreshMsg"></div>
             </div>
           </div>
         </div>
@@ -583,229 +670,181 @@
       </div>
     </div>
 
-    <!-- 3. ระบบและความปลอดภัย -->
+    <!-- 3. บันทึกเหตุการณ์และประวัติ (History Logs) -->
+    <div class="card setupCard setGroupCard" id="cardEventHistory">
+      <button type="button" class="setupHead" data-action="toggle-set-group" data-group="cardEventHistory">
+        <span>บันทึกเหตุการณ์และประวัติ (History Logs)</span>
+        <span class="setupHeadMeta"><span id="historyHeadCount" class="badgeMini">0 วัน</span><span class="setupChev">▼</span></span>
+      </button>
+      <div id="cardEventHistoryBody" class="setupBody collapsed">
+        <!-- Flash Storage Status Info Box -->
+        <div style="background:rgba(255,255,255,0.04);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;font-size:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <b>พื้นที่จัดเก็บบน Flash:</b>
+            <span id="historyFsUsage" style="font-weight:700;color:var(--pri);font-size:13px">— / 192 KB</span>
+          </div>
+          <div style="color:var(--muted);font-size:11px;line-height:1.4">
+            ระบบบันทึกประวัติการเข้าประตูแบบ Ultra-Compact 6-Byte ลง Flash อัตโนมัติ (และเซฟทันทีเมื่อข้อมูลใน RAM ถึง 500 รายการ) เก็บประวัติย้อนหลังสูงสุด 180 วัน (6 เดือน)
+          </div>
+        </div>
+
+        <!-- Controls: Date Select + Action Buttons -->
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+          <div style="display:flex;gap:8px;align-items:center">
+            <label for="historyDateSelect" style="font-size:12px;color:var(--muted);margin:0;white-space:nowrap;font-weight:600">เลือกวันที่:</label>
+            <select id="historyDateSelect" style="flex:1;padding:6px 10px;font-size:12px;border-radius:6px;background:rgba(20,25,35,0.9);color:var(--text);border:1px solid rgba(255,255,255,0.18);cursor:pointer">
+              <option value="">-- กรุณาเลือกวันที่ --</option>
+              <option value="live">ข้อมูลสดปัจจุบัน (RAM)</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap">
+            <button type="button" class="btnPri" data-action="save-events-flash" id="btnHistorySave" title="บันทึกเหตุการณ์ปัจจุบันลง Flash ทันที" style="width:auto;min-width:0;padding:5px 12px;font-size:11px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
+              <span id="historySaveText">บันทึกทันที</span>
+            </button>
+            <button type="button" class="btnGhost" data-action="export-history-csv" id="btnHistoryExport" title="ดาวน์โหลดประวัติเหตุการณ์ 180 วัน (6 เดือน) เป็นไฟล์ CSV" style="width:auto;min-width:0;padding:5px 12px;font-size:11px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
+              <span id="historyExportText">ส่งออก CSV</span>
+            </button>
+            <button type="button" class="btnGhost" data-action="copy-history-events" id="btnHistoryCopy" style="width:auto;min-width:0;padding:5px 12px;font-size:11px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
+              <span id="historyCopyText">คัดลอกสรุป</span>
+            </button>
+            <button type="button" class="btnStop" data-action="clear-history-flash" id="btnHistoryClear" style="width:auto;min-width:0;padding:5px 12px;font-size:11px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
+              <span>ล้าง Flash</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Access Filter & View Mode Toggle -->
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+          <label for="historyVehicleFilter" style="font-size:12px;color:var(--muted);margin:0;white-space:nowrap;font-weight:600">ฟิลเตอร์ผู้เข้า:</label>
+          <select id="historyVehicleFilter" style="flex:1;min-width:130px;padding:6px 10px;font-size:12px;border-radius:6px;background:rgba(20,25,35,0.9);color:var(--text);border:1px solid rgba(255,255,255,0.18);cursor:pointer">
+            <option value="all">ทั้งหมด (ทุกคน)</option>
+          </select>
+          <button type="button" class="btnGhost" data-action="toggle-history-view" id="btnToggleHistoryView" style="width:auto;min-width:0;padding:5px 10px;font-size:11px;border-radius:6px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">
+            <span>สลับดู Log ดิบ</span>
+          </button>
+        </div>
+
+        <!-- KPI Summary: Total Access Entries -->
+        <div id="historyKpiGrid" style="margin-bottom:12px">
+          <div class="card" style="margin:0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px">
+            <div>
+              <div style="font-size:11px;color:var(--muted);font-weight:600">เข้าประตูทั้งหมด</div>
+              <div id="historyKpiCycles" style="font-size:16px;font-weight:700;color:var(--txt)">0 ครั้ง</div>
+            </div>
+            <div id="historyKpiSuccessRate" style="font-size:11px;color:var(--ok);font-weight:600;background:rgba(62,207,142,0.12);padding:4px 10px;border-radius:6px;border:1px solid rgba(62,207,142,0.25)">
+              บันทึกเรียบร้อย 100%
+            </div>
+          </div>
+        </div>
+
+        <!-- Health / Anomaly Alerts Banner -->
+        <div id="historyAlertBanner" class="hidden" style="margin-bottom:12px;padding:8px 10px;border-radius:8px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;font-size:11px">
+          <div style="font-weight:700;margin-bottom:2px">ข้อสังเกต:</div>
+          <div id="historyAlertContent" style="color:var(--txt);line-height:1.4"></div>
+        </div>
+
+        <!-- Access Entry Cards Container (Default View) -->
+        <div id="historyCycleContainer" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">
+          <div style="color:var(--muted);font-size:12px;text-align:center;padding:16px;background:rgba(255,255,255,0.02);border:1px solid var(--line);border-radius:10px">
+            กรุณาเลือกวันที่เพื่อดูข้อมูลประวัติการเข้าประตู
+          </div>
+        </div>
+
+        <!-- Raw Event List Container (Alternative View) -->
+        <div id="historyEventList" class="hidden" style="display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:8px;background:rgba(0,0,0,0.25);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+          <div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">กรุณาเลือกวันที่เพื่อดูข้อมูลย้อนหลัง</div>
+        </div>
+        <div class="hint" id="historyMsg" style="margin-top:6px"></div>
+      </div>
+    </div>
+
+    <!-- 4. ระบบและความปลอดภัย -->
     <div class="card setupCard setGroupCard" id="setGroupSystem">
       <button type="button" class="setupHead" data-action="toggle-set-group" data-group="setGroupSystem">
         <span>ระบบและความปลอดภัย</span>
         <span class="setupHeadMeta"><span class="setupChev">▼</span></span>
       </button>
       <div id="setGroupSystemBody" class="setupBody collapsed">
-        <!-- ตั้งเวลาเปิด-ปิดประตู -->
-        <div class="setFold setupCard" id="cardSchedule">
-          <button type="button" class="setupHead setFoldHead" data-action="toggle-set-group" data-group="cardSchedule">
-            <span>ตั้งเวลาเปิด-ปิดประตู</span>
-            <span class="setupHeadMeta"><span id="schedHeadBadge" class="badgeMini">0 เวลา</span><span class="setupChev">▼</span></span>
-          </button>
-          <div id="cardScheduleBody" class="setupBody collapsed">
-            <p class="muted" style="margin:0 0 12px;font-size:12px;line-height:1.45">สั่งเปิดหรือปิดประตูอัตโนมัติตามวันและเวลาที่กำหนด</p>
-            <div id="scheduleList"></div>
-            <button type="button" class="btnOutline" style="margin-top:8px" data-action="add-schedule">+ เพิ่มเวลาทำงาน</button>
-            <button type="button" class="btnPri btnSchedSave" data-action="save-schedules">บันทึกตารางเวลา</button>
-            <div class="hint" id="schedMsg"></div>
-          </div>
-        </div>
 
-        <div class="setFold setupCard" id="cardWebAuth">
-          <button type="button" class="setupHead setFoldHead" data-action="toggle-set-group" data-group="cardWebAuth">
-            <span>รหัสผ่านเข้าใช้งานหน้าเว็บ</span>
-            <span class="setupHeadMeta"><span id="webAuthHeadBadge" class="badgeMini">ไม่มีรหัส</span><span class="setupChev">▼</span></span>
-          </button>
-          <div id="cardWebAuthBody" class="setupBody collapsed">
-            <p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.45">ตั้งรหัสผ่านเพื่อป้องกันผู้อื่นเข้าแก้ไขการตั้งค่า</p>
-            <div class="muted" id="webAuthHint">—</div>
-            <label style="margin-top:10px">รหัสผ่านใหม่</label>
-            <div class="pwWrap">
-              <input id="webPass" type="password" placeholder="เว้นว่างไว้หากไม่ต้องการใส่รหัสผ่าน" autocomplete="new-password" />
-              <button type="button" class="pwToggle" data-action="toggle-pw" data-target="webPass" aria-label="แสดงรหัสผ่าน" title="แสดง/ซ่อน"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <!-- การ์ดที่ 1: ⚙️ ระบบและเวลา (System & Clock) -->
+        <div class="sysSubCard">
+          <div class="sysSubCardHead">
+            <span>⚙️ ระบบและเวลา (System & Clock)</span>
+          </div>
+
+          <!-- เวลาของตัวเครื่อง -->
+          <div class="sysRowItem" id="cardTime">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+              <div>
+                <b>เวลาของตัวเครื่อง</b>
+                <div class="muted" style="font-size:12px;margin-top:2px" id="sysTimeHint">ซิงค์เวลามาตรฐานจากอินเทอร์เน็ตอัตโนมัติ</div>
+                <div class="fixIpVal" id="sysTimeLbl">—</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span id="timeHeadBadge" class="badgeMini">—</span>
+                <button type="button" class="btnGhost" data-action="sync-time" style="padding:6px 12px;font-size:12px;width:auto;min-width:0">ซิงค์เวลา</button>
+              </div>
             </div>
-            <button type="button" class="btnPri" style="margin-top:14px" data-action="save-webauth">บันทึกรหัสผ่าน</button>
-            <div class="hint" id="webAuthMsg"></div>
-          </div>
-        </div>
-
-        <div class="setFold setupCard" id="cardSafeMode">
-          <button type="button" class="setupHead setFoldHead" data-action="toggle-set-group" data-group="cardSafeMode">
-            <span>โหมดความปลอดภัย (Safe Mode)</span>
-            <span class="setupHeadMeta"><span id="safeModeHeadBadge" class="badgeMini">ปกติ</span><span class="setupChev">▼</span></span>
-          </button>
-          <div id="cardSafeModeBody" class="setupBody collapsed">
-            <p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.5">โหมดกู้คืนฉุกเฉินและซ่อมบำรุง — ตัดการสั่งงานประตูอัตโนมัติชั่วคราว ปลดล็อกรหัสผ่านหน้าเว็บ และเปิด AP ไม่มีรหัสผ่าน (กดปุ่ม BOOT บนบอร์ดค้าง 5 วินาที หรือกดปุ่มด้านล่าง)</p>
-            <div id="safeModeBadge" class="safeBadge hidden">⚠ กำลังอยู่ใน Safe Mode</div>
-            <button type="button" class="btnPri hidden" id="btnExitSafeMode" style="margin-top:10px" data-action="exit-safemode">ออกจาก Safe Mode และกลับสู่โหมดปกติ</button>
-            <button type="button" class="btnStop" id="btnEnterSafeMode" style="margin-top:10px" data-action="enter-safemode">เข้าสู่ Safe Mode ทันที</button>
-          </div>
-        </div>
-
-        <div class="setFold setupCard" id="cardTime">
-          <button type="button" class="setupHead setFoldHead" data-action="toggle-set-group" data-group="cardTime">
-            <span>เวลาของตัวเครื่อง</span>
-            <span class="setupHeadMeta"><span id="timeHeadBadge" class="badgeMini">—</span><span class="setupChev">▼</span></span>
-          </button>
-          <div id="cardTimeBody" class="setupBody collapsed">
-            <div class="fixIpVal" id="sysTimeLbl">—</div>
-            <p class="muted" style="margin:6px 0 10px;font-size:12px" id="sysTimeHint">ซิงค์เวลามาตรฐานจากอินเทอร์เน็ตอัตโนมัติเมื่อเชื่อมต่อ Wi‑Fi บ้าน</p>
-            <button type="button" class="btnPri" data-action="sync-time">ซิงค์เวลาปัจจุบัน</button>
             <div class="hint" id="timeMsg"></div>
           </div>
-        </div>
 
-        <div class="setFold setupCard" id="cardAutoReboot">
-          <button type="button" class="setupHead setFoldHead" data-action="toggle-set-group" data-group="cardAutoReboot">
-            <span>ตั้งเวลารีสตาร์ทอัตโนมัติ (Auto Reboot)</span>
-            <span class="setupHeadMeta"><span id="rebootHeadBadge" class="badgeMini">เปิด (03:00)</span><span class="setupChev">▼</span></span>
-          </button>
-          <div id="cardAutoRebootBody" class="setupBody collapsed">
-            <p class="muted" style="margin:0 0 12px;font-size:12px;line-height:1.5">
-              รีสตาร์ทเครื่องประจำวันเพื่อเคลียร์หน่วยความจำและบำรุงรักษาระบบ (ระบบจะบันทึกประวัติเหตุการณ์ลง Flash อัตโนมัติก่อนรีสตาร์ท และจะรีสตาร์ทเฉพาะเมื่อประตูปิดสนิท ปลอดภัย ไม่มีสิ่งกีดขวางเท่านั้น)
-            </p>
-            <div class="swRow" style="margin-bottom:0">
+          <!-- ตั้งเวลารีสตาร์ทอัตโนมัติ -->
+          <div class="sysRowItem" id="cardAutoReboot" style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px">
+            <div class="swRow" style="margin:0 0 8px">
               <div>
-                <b>เปิดใช้งานรีสตาร์ทอัตโนมัติ</b>
-                <div class="muted" style="font-size:12px;font-weight:normal;margin-top:2px">รีสตาร์ทประจำวันตามเวลาที่กำหนด</div>
+                <b>รีสตาร์ทอัตโนมัติประจำวัน</b>
+                <div class="muted" style="font-size:12px;margin-top:2px">เคลียร์หน่วยความจำเพื่อความเสถียร (รีสตาร์ทเฉพาะตอนประตูปิดสนิท)</div>
               </div>
-              <label class="sw" title="เปิด/ปิด รีสตาร์ทอัตโนมัติ">
-                <input type="checkbox" id="swAutoReboot" data-action="toggle-auto-reboot" checked />
-                <span class="swTrack"></span>
-              </label>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span id="rebootHeadBadge" class="badgeMini">เปิด (03:00)</span>
+                <label class="sw" title="เปิด/ปิด รีสตาร์ทอัตโนมัติ">
+                  <input type="checkbox" id="swAutoReboot" data-action="toggle-auto-reboot" checked />
+                  <span class="swTrack"></span>
+                </label>
+              </div>
             </div>
             <div class="hint" id="autoRebootMsg"></div>
-
-            <div id="autoRebootTimeWrap" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
-              <label for="rebootTimeInput" style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">เวลารีสตาร์ท (ชั่วโมง : นาที)</label>
+            <div id="autoRebootTimeWrap" style="margin-top:8px">
               <div style="display:flex;gap:8px;align-items:center">
-                <input type="time" id="rebootTimeInput" value="03:00" style="padding:7px 12px;font-size:14px;border-radius:8px;background:rgba(20,25,35,0.9);color:var(--txt);border:1px solid rgba(255,255,255,0.18)" />
-                <button type="button" class="btnPri" data-action="save-reboot-time" id="btnSaveRebootTime" style="padding:7px 16px;font-size:12px;width:auto;white-space:nowrap">บันทึกเวลา</button>
+                <label for="rebootTimeInput" style="font-size:12px;color:var(--muted);white-space:nowrap">เวลารีสตาร์ท:</label>
+                <input type="time" id="rebootTimeInput" value="03:00" style="padding:6px 10px;font-size:13px;border-radius:6px;background:rgba(20,25,35,0.9);color:var(--txt);border:1px solid rgba(255,255,255,0.18)" />
+                <button type="button" class="btnPri" data-action="save-reboot-time" id="btnSaveRebootTime" style="padding:6px 12px;font-size:12px;width:auto;min-width:0">บันทึกเวลา</button>
               </div>
-              <div class="hint" id="rebootTimeMsg" style="margin-top:6px"></div>
+              <div class="hint" id="rebootTimeMsg" style="margin-top:4px"></div>
             </div>
           </div>
-        </div>
 
-        <div class="setFold setupCard" id="cardEventHistory">
-          <button type="button" class="setupHead setFoldHead" data-action="toggle-set-group" data-group="cardEventHistory">
-            <span>บันทึกเหตุการณ์ย้อนหลัง (History Logs)</span>
-            <span class="setupHeadMeta"><span id="historyHeadCount" class="badgeMini">0 วัน</span><span class="setupChev">▼</span></span>
-          </button>
-          <div id="cardEventHistoryBody" class="setupBody collapsed">
-            <!-- Flash Storage Status Info Box -->
-            <div style="background:rgba(255,255,255,0.04);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;font-size:12px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                <b>พื้นที่จัดเก็บบน Flash:</b>
-                <span id="historyFsUsage" style="font-weight:700;color:var(--pri);font-size:13px">— / 192 KB</span>
+          <!-- อัปเดตเฟิร์มแวร์ -->
+          <div class="sysRowItem" id="cardOta" style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div>
+                <b>อัปเดตเฟิร์มแวร์ (Firmware Update)</b>
+                <div class="muted" style="font-size:12px;margin-top:2px">เวอร์ชันปัจจุบัน: <span id="otaCurVersion" style="font-weight:700;color:var(--pri)">v1.0.1</span></div>
               </div>
-              <div style="color:var(--muted);font-size:11px;line-height:1.4">
-                ระบบบันทึกประวัติการเข้าประตูแบบ Ultra-Compact 6-Byte ลง Flash อัตโนมัติ (และเซฟทันทีเมื่อข้อมูลใน RAM ถึง 500 รายการ) เก็บประวัติย้อนหลังสูงสุด 180 วัน (6 เดือน)
-              </div>
+              <span id="otaHeadVer" class="badgeMini">v1.0.1</span>
             </div>
 
-            <!-- Controls: Date Select + Action Buttons -->
-            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
-              <div style="display:flex;gap:8px;align-items:center">
-                <label for="historyDateSelect" style="font-size:12px;color:var(--muted);margin:0;white-space:nowrap;font-weight:600">เลือกวันที่:</label>
-                <select id="historyDateSelect" style="flex:1;padding:6px 10px;font-size:12px;border-radius:6px;background:rgba(20,25,35,0.9);color:var(--text);border:1px solid rgba(255,255,255,0.18);cursor:pointer">
-                  <option value="">-- กรุณาเลือกวันที่ --</option>
-                  <option value="live">ข้อมูลสดปัจจุบัน (RAM)</option>
-                </select>
-              </div>
-              <div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap">
-                <button type="button" class="btnPri" data-action="save-events-flash" id="btnHistorySave" title="บันทึกเหตุการณ์ปัจจุบันลง Flash ทันที" style="width:auto;min-width:0;padding:5px 12px;font-size:11px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
-                  <span id="historySaveText">บันทึกทันที</span>
-                </button>
-                <button type="button" class="btnGhost" data-action="export-history-csv" id="btnHistoryExport" title="ดาวน์โหลดประวัติเหตุการณ์ 180 วัน (6 เดือน) เป็นไฟล์ CSV" style="width:auto;min-width:0;padding:5px 12px;font-size:11px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
-                  <span id="historyExportText">ส่งออก CSV</span>
-                </button>
-                <button type="button" class="btnGhost" data-action="copy-history-events" id="btnHistoryCopy" style="width:auto;min-width:0;padding:5px 12px;font-size:11px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
-                  <span id="historyCopyText">คัดลอกสรุป</span>
-                </button>
-                <button type="button" class="btnStop" data-action="clear-history-flash" id="btnHistoryClear" style="width:auto;min-width:0;padding:5px 12px;font-size:11px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
-                  <span>ล้าง Flash</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Access Filter & View Mode Toggle -->
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
-              <label for="historyVehicleFilter" style="font-size:12px;color:var(--muted);margin:0;white-space:nowrap;font-weight:600">ฟิลเตอร์ผู้เข้า:</label>
-              <select id="historyVehicleFilter" style="flex:1;min-width:130px;padding:6px 10px;font-size:12px;border-radius:6px;background:rgba(20,25,35,0.9);color:var(--text);border:1px solid rgba(255,255,255,0.18);cursor:pointer">
-                <option value="all">ทั้งหมด (ทุกคน)</option>
-              </select>
-              <button type="button" class="btnGhost" data-action="toggle-history-view" id="btnToggleHistoryView" style="width:auto;min-width:0;padding:5px 10px;font-size:11px;border-radius:6px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">
-                <span>สลับดู Log ดิบ</span>
-              </button>
-            </div>
-
-            <!-- KPI Summary: Total Access Entries -->
-            <div id="historyKpiGrid" style="margin-bottom:12px">
-              <div class="card" style="margin:0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px">
-                <div>
-                  <div style="font-size:11px;color:var(--muted);font-weight:600">เข้าประตูทั้งหมด</div>
-                  <div id="historyKpiCycles" style="font-size:16px;font-weight:700;color:var(--txt)">0 ครั้ง</div>
-                </div>
-                <div id="historyKpiSuccessRate" style="font-size:11px;color:var(--ok);font-weight:600;background:rgba(62,207,142,0.12);padding:4px 10px;border-radius:6px;border:1px solid rgba(62,207,142,0.25)">
-                  บันทึกเรียบร้อย 100%
-                </div>
-              </div>
-            </div>
-
-            <!-- Health / Anomaly Alerts Banner -->
-            <div id="historyAlertBanner" class="hidden" style="margin-bottom:12px;padding:8px 10px;border-radius:8px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;font-size:11px">
-              <div style="font-weight:700;margin-bottom:2px">ข้อสังเกต:</div>
-              <div id="historyAlertContent" style="color:var(--txt);line-height:1.4"></div>
-            </div>
-
-            <!-- Access Entry Cards Container (Default View) -->
-            <div id="historyCycleContainer" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">
-              <div style="color:var(--muted);font-size:12px;text-align:center;padding:16px;background:rgba(255,255,255,0.02);border:1px solid var(--line);border-radius:10px">
-                กรุณาเลือกวันที่เพื่อดูข้อมูลประวัติการเข้าประตู
-              </div>
-            </div>
-
-            <!-- Raw Event List Container (Alternative View) -->
-            <div id="historyEventList" class="hidden" style="display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:8px;background:rgba(0,0,0,0.25);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
-              <div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">กรุณาเลือกวันที่เพื่อดูข้อมูลย้อนหลัง</div>
-            </div>
-            <div class="hint" id="historyMsg" style="margin-top:6px"></div>
-          </div>
-        </div>
-
-        <div class="setFold setupCard" id="cardOta">
-          <button type="button" class="setupHead setFoldHead" data-action="toggle-set-group" data-group="cardOta">
-            <span>อัปเดตเฟิร์มแวร์ (Firmware Update)</span>
-            <span class="setupHeadMeta"><span id="otaHeadVer" class="badgeMini">v1.0.0</span><span class="setupChev">▼</span></span>
-          </button>
-          <div id="cardOtaBody" class="setupBody collapsed">
-            <!-- System Status Info Box -->
-            <div id="otaStatusBox" style="background:rgba(255,255,255,0.04);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;font-size:12px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                <b>เวอร์ชันปัจจุบัน:</b>
-                <span id="otaCurVersion" style="font-weight:700;color:var(--pri);font-size:13px">v1.0.0</span>
-              </div>
+            <!-- Status Box -->
+            <div id="otaStatusBox" style="background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px">
               <div><b>สถานะระบบ OTA:</b> <span id="otaPartStatus">—</span></div>
-              <div style="margin-top:4px"><b>พื้นที่ทำงานปัจจุบัน:</b> <span id="otaPartRunning">—</span></div>
-              <div style="margin-top:4px"><b>พื้นที่ว่างสำหรับอัปเดต:</b> <span id="otaPartSpace">—</span></div>
+              <div style="margin-top:3px"><b>พื้นที่ทำงานปัจจุบัน:</b> <span id="otaPartRunning">—</span></div>
+              <div style="margin-top:3px"><b>พื้นที่ว่างสำหรับอัปเดต:</b> <span id="otaPartSpace">—</span></div>
             </div>
 
-            <!-- Online Update Section -->
-            <div class="otaSection" style="margin-bottom:14px;padding:12px;border:1px solid rgba(91,156,255,0.25);border-radius:10px;background:rgba(18,30,48,0.5)">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <span style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">
-                  อัปเดตออนไลน์ (GitHub)
-                </span>
+            <!-- Online OTA -->
+            <div style="padding:10px;border:1px solid rgba(91,156,255,0.25);border-radius:8px;background:rgba(18,30,48,0.4);margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <b style="font-size:12px">อัปเดตออนไลน์ (GitHub)</b>
                 <span style="font-size:10px;color:var(--muted)">autolinkpromax/AutoDoor-RF2</span>
               </div>
-              <p class="muted" style="margin:0 0 10px;font-size:11px;line-height:1.4">
-                ตรวจสอบและดาวน์โหลดเฟิร์มแวร์เวอร์ชันล่าสุดจาก GitHub โดยตรง
-              </p>
-              <button type="button" class="btnPri" data-action="check-online-ota" id="btnCheckOnlineOta" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px">
-                <span>ตรวจสอบเวอร์ชันใหม่</span>
-              </button>
-              <div class="hint" id="onlineOtaMsg" style="margin-top:8px"></div>
+              <button type="button" class="btnPri" data-action="check-online-ota" id="btnCheckOnlineOta" style="width:100%;font-size:12px;padding:8px">ตรวจสอบเวอร์ชันใหม่</button>
+              <div class="hint" id="onlineOtaMsg" style="margin-top:6px"></div>
             </div>
 
-            <!-- Online Update Modal / Confirm Box -->
-            <div id="onlineOtaCard" class="hidden" style="margin-bottom:14px;padding:12px;border:1px solid #2d6b4f;border-radius:10px;background:linear-gradient(145deg,#0d2419,#081710);animation:fadeIn .2s ease">
+            <!-- Online OTA Card -->
+            <div id="onlineOtaCard" class="hidden" style="margin-bottom:10px;padding:12px;border:1px solid #2d6b4f;border-radius:10px;background:linear-gradient(145deg,#0d2419,#081710)">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <b style="color:var(--ok);font-size:13px;display:flex;align-items:center;gap:6px">พบเฟิร์มแวร์เวอร์ชันใหม่!</b>
+                <b style="color:var(--ok);font-size:13px">พบเฟิร์มแวร์เวอร์ชันใหม่!</b>
                 <span id="newFwVerBadge" style="background:var(--ok);color:#062014;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px">v1.0.1</span>
               </div>
               <div id="newFwDetails" style="font-size:12px;color:var(--txt);margin-bottom:10px;line-height:1.5">
@@ -823,7 +862,7 @@
             </div>
 
             <!-- Progress Bar -->
-            <div id="otaProgressWrap" class="hidden" style="margin-bottom:12px">
+            <div id="otaProgressWrap" class="hidden" style="margin-bottom:10px">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:11px">
                 <span id="otaProgressLabel" style="color:var(--pri)">กำลังดำเนินการ...</span>
                 <span id="otaProgressTxt" style="color:var(--muted);font-weight:700">0%</span>
@@ -833,22 +872,81 @@
               </div>
             </div>
 
-            <!-- Manual File Upload Section -->
-            <div style="padding-top:10px;border-top:1px dashed var(--line);margin-top:10px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                <span style="font-size:12px;color:var(--muted)">หรือ อัปเดตผ่านไฟล์ (.bin) ในเครื่อง:</span>
-              </div>
+            <!-- Manual Upload -->
+            <div style="padding-top:8px;border-top:1px dashed var(--line)">
+              <div style="font-size:12px;color:var(--muted);margin-bottom:6px">หรือ อัปเดตผ่านไฟล์ (.bin) ในเครื่อง:</div>
               <input type="file" id="otaFileInput" accept=".bin" style="display:none" />
-              <button type="button" class="btnGhost" data-action="pick-ota-file" id="btnUploadOta" style="width:100%;font-size:12px;padding:9px">เลือกไฟล์ .bin จากเครื่อง</button>
+              <button type="button" class="btnGhost" data-action="pick-ota-file" id="btnUploadOta" style="width:100%;font-size:12px;padding:8px">เลือกไฟล์ .bin จากเครื่อง</button>
               <div class="hint" id="otaMsg" style="margin-top:6px"></div>
             </div>
           </div>
         </div>
 
-        <div class="setSubSec" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
-          <button type="button" class="btnStop" data-action="restart-device" id="btnRestartDevice">รีสตาร์ทอุปกรณ์</button>
-          <div class="hint" id="restartMsg"></div>
+        <!-- การ์ดที่ 2: 🛡️ ความปลอดภัยและการเข้าถึง (Security & Access) -->
+        <div class="sysSubCard">
+          <div class="sysSubCardHead">
+            <span>🛡️ ความปลอดภัยและการเข้าถึง (Security & Access)</span>
+          </div>
+
+          <!-- รหัสผ่านเข้าใช้งานหน้าเว็บ -->
+          <div class="sysRowItem" id="cardWebAuth">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <b>รหัสผ่านเข้าใช้งานหน้าเว็บ (Admin PIN)</b>
+              <span id="webAuthHeadBadge" class="badgeMini">ไม่มีรหัส</span>
+            </div>
+            <p class="muted" style="margin:0 0 8px;font-size:12px" id="webAuthHint">ตั้งรหัสผ่านเพื่อป้องกันผู้อื่นเข้าแก้ไขการตั้งค่า</p>
+            <div class="pwWrap">
+              <input id="webPass" type="password" placeholder="เว้นว่างไว้หากไม่ต้องการใส่รหัสผ่าน" autocomplete="new-password" />
+              <button type="button" class="pwToggle" data-action="toggle-pw" data-target="webPass" aria-label="แสดงรหัสผ่าน" title="แสดง/ซ่อน"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+            <button type="button" class="btnPri" style="margin-top:10px" data-action="save-webauth">บันทึกรหัสผ่าน</button>
+            <div class="hint" id="webAuthMsg"></div>
+          </div>
+
+          <!-- Safe Mode -->
+          <div class="sysRowItem" id="cardSafeMode" style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <b>โหมดความปลอดภัย (Safe Mode)</b>
+              <span id="safeModeHeadBadge" class="badgeMini">ปกติ</span>
+            </div>
+            <p class="muted" style="margin:0 0 8px;font-size:12px;line-height:1.45">
+              โหมดกู้คืนฉุกเฉินและซ่อมบำรุง — ตัดการสั่งงานประตูอัตโนมัติ ปลดล็อกรหัสผ่านหน้าเว็บ และเปิด AP ไม่มีรหัสผ่าน
+            </p>
+            <div id="safeModeBadge" class="safeBadge hidden">⚠ กำลังอยู่ใน Safe Mode</div>
+            <button type="button" class="btnPri hidden" id="btnExitSafeMode" style="margin-top:8px" data-action="exit-safemode">ออกจาก Safe Mode และกลับสู่โหมดปกติ</button>
+            <button type="button" class="btnStop" id="btnEnterSafeMode" style="margin-top:8px" data-action="enter-safemode">เข้าสู่ Safe Mode ทันที</button>
+          </div>
         </div>
+
+        <!-- การ์ดที่ 3: ⚠️ โซนจัดการระบบ (Maintenance & Danger Zone) -->
+        <div class="sysSubCard" style="border-color:rgba(239,68,68,0.25);background:rgba(239,68,68,0.02)">
+          <div class="sysSubCardHead" style="color:#ef4444">
+            <span>⚠️ โซนจัดการระบบ (System Actions)</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+            <button type="button" class="btnStop" data-action="restart-device" id="btnRestartDevice" style="margin:0;padding:10px 12px;font-size:13px;font-weight:600">
+              🔄 รีสตาร์ทอุปกรณ์
+            </button>
+            <button type="button" class="btnDanger" id="cardFactoryReset" data-action="toggle-set-group" data-group="cardFactoryReset" style="background:#dc2626;color:#fff;border:none;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+              ⚠️ คืนค่าโรงงาน
+            </button>
+          </div>
+          <div class="hint" id="restartMsg"></div>
+
+          <!-- Factory Reset Confirm Collapsible -->
+          <div id="cardFactoryResetBody" class="setupBody collapsed" style="margin-top:10px;padding:12px;border:1px solid rgba(239,68,68,0.3);border-radius:10px;background:rgba(239,68,68,0.04)">
+            <p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.5">
+              รีเซ็ตการตั้งค่าระบบทั้งหมดเป็นค่าเริ่มต้น (Wi‑Fi, รหัสผ่าน, การเชื่อมต่อ, และการตั้งค่าประตู)<br/>
+              <b style="color:#10b981;">🛡️ Tag และรีโมทที่ลงทะเบียนไว้ทั้งหมดจะยังคงอยู่ ไม่สูญหาย</b>
+            </p>
+            <button type="button" class="btnDanger" data-action="system-factory-reset" style="background:#dc2626;color:#fff;border:none;padding:10px 16px;border-radius:8px;font-weight:600;cursor:pointer;width:100%">
+              ⚠️ ยืนยันรีเซ็ตค่าเริ่มต้นโรงงาน (Factory Reset)
+            </button>
+            <div class="hint" id="factoryResetMsg" style="margin-top:6px"></div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

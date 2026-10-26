@@ -22,6 +22,7 @@
 #include "modules/event_archive.h"
 #include "modules/outbound_webhook.h"
 #include "modules/mqtt_service.h"
+#include "modules/maintenance.h"
 #include <esp_task_wdt.h>
 
 
@@ -76,6 +77,8 @@ void setup() {
 
   gDoorController.init();
   gDoorController.initCommandQueue();
+  gMaintenance.begin(gPrefs);
+  gDoorController.addListener(&gMaintenance);
 
   ensureHookKey();
   gMotor.init();
@@ -119,10 +122,11 @@ struct ButtonChannel {
   uint32_t pressStartMs;
   bool stopFired;
   bool safeFired;
+  bool resetFired;
 };
 
 static ButtonChannel gBtnChannels[] = {
-  { kBootBtnPin, "BOOT (GPIO 9)", HIGH, HIGH, 0, 0, false, false }
+  { kBootBtnPin, "BOOT (GPIO 9)", HIGH, HIGH, 0, 0, false, false, false }
 };
 
 
@@ -158,6 +162,7 @@ void stepBootButton() {
         btn.pressStartMs = now;
         btn.stopFired = true;
         btn.safeFired = false;
+        btn.resetFired = false;
 
         Serial.printf("\n==================================================\n");
         Serial.printf("[boot-btn] >>> %s PRESSED -> STOP COMMAND SENT <<<\n", btn.name);
@@ -175,6 +180,7 @@ void stepBootButton() {
         btn.pressStartMs = 0;
         btn.stopFired = false;
         btn.safeFired = false;
+        btn.resetFired = false;
       }
     }
 
@@ -202,6 +208,23 @@ void stepBootButton() {
         }
       }
     }
+
+    // Very Long press check (10 seconds hold -> Factory Reset Wi-Fi and Web Password)
+    if (btn.stableState == LOW && btn.safeFired && !btn.resetFired) {
+      if ((uint32_t)(now - btn.pressStartMs) >= 10000) {
+        btn.resetFired = true;
+        Serial.printf("\n==================================================\n");
+        Serial.printf("[reset] >>> %s HELD 10s -> FACTORY RESET (WIFI & AUTH WIPED) <<<\n", btn.name);
+        Serial.printf("==================================================\n\n");
+        gMotor.triggerChirp(4);
+        clearHomeWifiPrefs();
+        clearWebAuthPassword();
+        logDoorEvent(DoorEventCode::ManualStop, DoorEventLevel::Warn, btn.pin, "FACTORY_RESET");
+        logDiagEvent(DoorEventCode::ManualStop, DoorEventLevel::Warn, DiagReasonCode::None, 0, btn.pin, "FACTORY_RESET");
+        delay(600);
+        ESP.restart();
+      }
+    }
   }
 }
 
@@ -211,6 +234,7 @@ void loop() {
   stepEspNowRxProcessing();
   stepBootButton();
   gServer.handleClient();
+  stepDnsServer();
   gMotor.step();
   stepTagLearn();
 

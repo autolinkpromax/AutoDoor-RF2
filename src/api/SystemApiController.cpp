@@ -9,6 +9,8 @@
 #include "modules/wifi_manager.h"
 #include "tags/TagRegistry.h"
 #include "diagnostics/DiagEventLogger.h"
+#include "modules/maintenance.h"
+#include "hal/MotorActuator.h"
 
 #include <Update.h>
 #include <esp_ota_ops.h>
@@ -74,6 +76,18 @@ void SystemApiController::registerRoutes() {
   _server.on("/api/webhook/test", HTTP_POST, [this]() {
     wrap([this]() { handleWebhookTest(); });
   });
+
+  _server.on("/api/maintenance/reset-service", HTTP_POST, [this]() {
+    wrap([this]() { handleResetService(); });
+  });
+
+  _server.on("/api/maintenance/settings", HTTP_POST, [this]() {
+    wrap([this]() { handleMaintenanceSettings(); });
+  });
+
+  _server.on("/api/system/factory-reset", HTTP_POST, [this]() {
+    wrap([this]() { handleFactoryReset(); });
+  });
 }
 
 void SystemApiController::handleHealth() {
@@ -113,6 +127,13 @@ void SystemApiController::handleStatus() {
     doc["espNowDisabled"] = gEspNowDisabled;
     doc["relayPulseMs"] = gRelayPulseMs;
     doc["doorTransitionMs"] = gDoorTransitionMs;
+
+    JsonObject maint = doc["maintenance"].to<JsonObject>();
+    maint["totalCycles"] = gMaintenance.getTotalCycles();
+    maint["serviceCycles"] = gMaintenance.getServiceCycles();
+    maint["serviceThreshold"] = gMaintenance.getServiceThreshold();
+    maint["serviceDue"] = gMaintenance.isServiceDue();
+    maint["lastServiceDate"] = gMaintenance.getLastServiceDate();
 
     JsonObject ota = doc["ota"].to<JsonObject>();
     const esp_partition_t* running = esp_ota_get_running_partition();
@@ -273,6 +294,13 @@ void SystemApiController::handleLive() {
     obj["sensorBits"] = ev.sensorBits;
     obj["flags"] = ev.flags;
   }
+
+  JsonObject maint = doc["maintenance"].to<JsonObject>();
+  maint["totalCycles"] = gMaintenance.getTotalCycles();
+  maint["serviceCycles"] = gMaintenance.getServiceCycles();
+  maint["serviceThreshold"] = gMaintenance.getServiceThreshold();
+  maint["serviceDue"] = gMaintenance.isServiceDue();
+  maint["lastServiceDate"] = gMaintenance.getLastServiceDate();
 
   sendJson(200, doc);
 }
@@ -526,3 +554,77 @@ void SystemApiController::handleWebhookTest() {
   doc["msg"] = enqueued ? "Enqueued test webhook" : "Queue full or not ready";
   sendJson(enqueued ? 200 : 409, doc);
 }
+
+void SystemApiController::handleResetService() {
+  JsonDocument body = parseBodyOrEmpty();
+  String dateStr = body["date"].as<String>();
+  gMaintenance.resetService(dateStr);
+  logDoorEvent(DoorEventCode::None, DoorEventLevel::Info, 0, "SERVICE_RESET");
+
+  JsonDocument res;
+  res["ok"] = true;
+  res["serviceCycles"] = 0;
+  res["lastServiceDate"] = gMaintenance.getLastServiceDate();
+  res["serviceDue"] = false;
+  sendJson(200, res);
+}
+
+void SystemApiController::handleMaintenanceSettings() {
+  JsonDocument body = parseBodyOrEmpty();
+  if (!body["threshold"].isNull()) {
+    gMaintenance.setThreshold(body["threshold"].as<uint32_t>());
+  }
+  JsonDocument res;
+  res["ok"] = true;
+  res["serviceThreshold"] = gMaintenance.getServiceThreshold();
+  sendJson(200, res);
+}
+
+void SystemApiController::handleFactoryReset() {
+  Serial.printf("\n==================================================\n");
+  Serial.printf("[reset] >>> WEB FACTORY RESET REQUESTED <<<\n");
+  Serial.printf("[reset] Resetting all settings to factory default. TAGS PRESERVED.\n");
+  Serial.printf("==================================================\n\n");
+
+  gMotor.triggerChirp(4);
+  logDoorEvent(DoorEventCode::ManualStop, DoorEventLevel::Warn, 0, "FACTORY_RESET");
+  logDiagEvent(DoorEventCode::ManualStop, DoorEventLevel::Warn, DiagReasonCode::None, 0, 0, "FACTORY_RESET");
+
+  // 1. Wipe Wi-Fi & Web Authentication
+  clearHomeWifiPrefs();
+  clearWebAuthPassword();
+
+  // 2. Wipe AppConfig door and sensor parameters
+  const char* keysToClear[] = {
+    "simMode", "motorReverse", "deviceName", "espNowCh", "tagAutoEnabled", "tagBuzzerEn",
+    "magSensEnabled", "builtinSensEn", "builtinMagSwap", "safeSensEnabled", "safeSensType",
+    "safeCloseDelay", "safeRevDelay", "remPassClose", "remPassDelay", "doorTransMs",
+    "magSensType", "autoRetryEn", "maxCloseRetry", "retryCloseDelay", "dblClose",
+    "rebootEn", "rebootHour", "rebootMin", "safe_mode", "apUserEnabled", "apIdleMin",
+    "blynkToken", "blynkHost", "blynkEn", "blynkDeviceName", "blynkTemplateId",
+    "mqttHost", "mqttPort", "mqttUser", "mqttPass", "mqttTopicPrefix", "mqttDiscPrefix", "mqttEnabled",
+    "whOutEn", "whOutUrl", "whLineEn", "whLineTok", "whLineTgt", "whEvSafety", "whEvOpenDur", "whOpenDurMin",
+    "servCycles", "servThreshold", "servLastDate", "schedCount", "hostname"
+  };
+  for (const char* k : keysToClear) {
+    gPrefs.remove(k);
+  }
+  for (int i = 0; i < 32; ++i) {
+    char sKey[16];
+    snprintf(sKey, sizeof(sKey), "sched_%d", i);
+    gPrefs.remove(sKey);
+  }
+
+  // NOTE: Tag entries ("tag_ids", "t_*") and lifetime odometer ("maintTotal") are 100% PRESERVED!
+
+  JsonDocument res;
+  res["ok"] = true;
+  res["msg"] = "Factory reset initiated. Device will restart into Setup Wizard.";
+  sendJson(200, res);
+
+  // Restart device safely after short delay
+  _server.client().flush();
+  delay(500);
+  ESP.restart();
+}
+

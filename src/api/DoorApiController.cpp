@@ -43,7 +43,9 @@ void DoorApiController::handleDoorPost() {
   }
   gActiveTriggerTagId = "";
   const bool isManualHold = (slot == "open" || slot == "stop");
-  const bool ok = requestDoorSlot(slot, true, isManualHold);
+  const bool force = body["force"] | body["bypassPreStop"] | false;
+  const bool ok = force ? executeDoorSlot(slot, true, isManualHold, true /* bypassPreStop */)
+                        : requestDoorSlot(slot, true, isManualHold);
   if (ok && slot == "open") {
     logDoorEvent(DoorEventCode::ManualOpen, DoorEventLevel::Info, 0, "WEB");
   }

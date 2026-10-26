@@ -8,3 +8,4 @@ void revokeAllWebSessions();
 bool cookieSessionValid();
 bool isWebAuthed();
 bool ensureWebAuth();
+void clearWebAuthPassword();

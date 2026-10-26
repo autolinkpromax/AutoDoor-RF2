@@ -21,7 +21,7 @@
 // ── Timing constants ────────────────────────────────────────────────
 constexpr uint32_t kBeaconIntervalScan  = 60;    // loop tick: scanning (fast hop)
 constexpr uint32_t kBeaconIntervalLock  = 80;    // loop tick: locked (high responsiveness)
-constexpr uint8_t  kBurstCountScan      = 4;     // sends per burst: scanning (higher density)
+constexpr uint8_t  kBurstCountScan      = 5;     // sends per burst: scanning — 5 packets เพิ่มโอกาส hub ได้ยินก่อน hop ช่อง
 constexpr uint8_t  kBurstCountLock      = 3;     // sends per burst: locked
 constexpr uint8_t  kBootBurstCount      = 6;     // boot-time burst sends
 constexpr uint32_t kBootSettleMs        = 400;   // delay before channel scan
@@ -216,8 +216,8 @@ void initRadio() {
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
-  WiFi.setPhyMode(WIFI_PHY_MODE_11N);
-  WiFi.setOutputPower(20.5);
+  WiFi.setPhyMode(WIFI_PHY_MODE_11B);  // 11b (DSSS @ 1Mbps): sensitivity ดีกว่า 11N ~6-8 dB = ระยะไกลขึ้น 2-3x
+  WiFi.setOutputPower(20.5);  // Max output power for ESP8285
 
   esp_now_init();
   esp_now_register_recv_cb(onEspNowRecv);
@@ -257,7 +257,7 @@ void applyChannel(uint8_t channel, bool persist) {
     [[maybe_unused]] const uint8_t prev = gWifiChannel;
     gWifiChannel = channel;
     wifi_set_channel(gWifiChannel);
-    delay(10);
+    delay(5);  // 5ms เพียงพอตาม ESP8266 SDK spec (ลดจาก 10ms เพื่อลด scan blackout)
     ensureBroadcastPeer(gWifiChannel);
     DEBUG_PRINTF("[ch] %u -> %u\n", prev, gWifiChannel);
   }
@@ -273,7 +273,7 @@ void restoreRadio() {
   delay(1);
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
-  WiFi.setPhyMode(WIFI_PHY_MODE_11N);
+  WiFi.setPhyMode(WIFI_PHY_MODE_11B);  // 11b ต้องตรงกับ initRadio() — ระยะไกลขึ้น 2-3x
   WiFi.setOutputPower(20.5);
 
   esp_now_init();
@@ -550,7 +550,7 @@ void setup() {
     int err = esp_now_send(gBroadcastMac, (uint8_t*)&gBeacon, sizeof(gBeacon));
     if (err == 0) { ++ok; ++gOkSends; }
     else          { ++fail; ++gFailSends; }
-    delay(10);
+    delay(2);  // 2ms = เพียงพอให้ radio flush (เทียบกับ sendBeaconBurst), ลดจาก 10ms ประหยัด 48ms/boot
   }
   Serial.printf("[boot] burst ok=%d fail=%d\n", ok, fail);
 

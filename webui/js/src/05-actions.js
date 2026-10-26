@@ -57,6 +57,30 @@ function onActionClick(e) {
     case 'setup-go-blynk':
       setupGoBlynk();
       break;
+    case 'wizard-test-open':
+      if (typeof wizardTestOpen === 'function') wizardTestOpen();
+      break;
+    case 'wizard-toggle-motor-reverse':
+      if (typeof wizardToggleMotorReverse === 'function') wizardToggleMotorReverse();
+      break;
+    case 'wizard-save-admin-pin':
+      if (typeof wizardSaveAdminPin === 'function') wizardSaveAdminPin();
+      break;
+    case 'setup-go-webauth':
+      if (typeof setupGoWebAuth === 'function') setupGoWebAuth();
+      break;
+    case 'go-to-maintenance':
+      if (typeof goToMaintenance === 'function') goToMaintenance();
+      break;
+    case 'reset-service-reminder':
+      if (typeof resetServiceReminder === 'function') resetServiceReminder();
+      break;
+    case 'save-maintenance-threshold':
+      if (typeof saveMaintenanceThreshold === 'function') saveMaintenanceThreshold();
+      break;
+    case 'system-factory-reset':
+      if (typeof confirmAndFactoryReset === 'function') confirmAndFactoryReset();
+      break;
     case 'toggle-pw':
       togglePw(el.dataset.target, el);
       break;

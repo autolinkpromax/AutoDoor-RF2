@@ -424,19 +424,15 @@ async function startAutoCalibrate() {
 
   try {
     const live = await api('/api/live');
-    if (live.magSensorClosed || live.doorState === 'closed') {
-      setHint('autoCalibrateMsg', 'hint err', '⚠️ ประตูปิดสนิทอยู่แล้ว กรุณาสั่งเปิดประตูจนสุดก่อน แล้วจึงกดเริ่มจับเวลา');
+    if (live.magSensorClosed) {
+      setHint('autoCalibrateMsg', 'hint err', '⚠️ เซ็นเซอร์แม่เหล็กยังดูดติดสนิทอยู่ กรุณาเลื่อนเปิดประตูออกมาก่อน แล้วจึงกดเริ่มจับเวลา');
       return;
     }
   } catch (_) {}
 
-  if (!confirm('ระบบจะสั่ง "ปิดประตู" และเริ่มจับเวลาจนกว่าเซ็นเซอร์แม่เหล็กจะดูดติดสนิท\n\nพร้อมเริ่มจับเวลาหรือไม่?')) {
-    return;
-  }
-
   try {
-    setHint('autoCalibrateMsg', 'hint', 'กำลังส่งคำสั่งปิดประตู…');
-    const res = await api('/api/door', { method: 'POST', body: { slot: 'close' } });
+    setHint('autoCalibrateMsg', 'hint', '⚡ กำลังสั่งปิดประตูทันที…');
+    const res = await api('/api/door', { method: 'POST', body: { slot: 'close', force: true } });
     if (res.ok === false) throw new Error('door_failed');
   } catch (e) {
     setHint('autoCalibrateMsg', 'hint err', 'ส่งคำสั่งปิดประตูไม่สำเร็จ กรุณาลองใหม่');
@@ -459,7 +455,7 @@ async function startAutoCalibrate() {
   autoCalibratePollInterval = setInterval(async () => {
     try {
       const d = await api('/api/live');
-      const isClosed = !!d.magSensorClosed || d.doorState === 'closed';
+      const isClosed = !!d.magSensorClosed;
 
       if (isClosed) {
         const totalDurationSec = (performance.now() - autoCalibrateStartMs) / 1000;
@@ -480,14 +476,9 @@ async function startAutoCalibrate() {
 
         setHint('doorAnimMsg', 'hint ok', 'บันทึกสำเร็จ (' + finalSec + ' วินาที)');
         setHint('autoCalibrateMsg', 'hint ok', '🎉 จับเวลาสำเร็จ! วัดเวลาจริงได้ ' + totalDurationSec.toFixed(1) + ' วิ (ตั้งค่า ' + finalSec + ' วินาที และบันทึกเรียบร้อย)');
-      } else if (d.doorState === 'stopped') {
-        const elapsed = (performance.now() - autoCalibrateStartMs) / 1000;
-        if (elapsed > 3) {
-          stopAutoCalibrateUi('⚠️ ประตูหยุดเคลื่อนที่กลางคัน การจับเวลาถูกยกเลิก', true);
-        }
       }
     } catch (_) {}
-  }, 200);
+  }, 100);
 
   setTimeout(() => {
     if (isCalibrating) {

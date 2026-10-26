@@ -80,16 +80,30 @@ function refreshSetupWizardUi(settings, blynk, tagCount) {
   const wifiDone = !!curSettings?.staConnected;
   const tagDone = curTagCount > 0;
   const blynkDone = !!curBlynk?.enabled && (curBlynk.token || State.blynkTokenSaved || '').length >= 8;
+  const motorRev = !!curSettings?.motorReverse;
 
+  const adminPinDone = !!State.webAuthHasPassword;
   $('setupCardWifi')?.classList.toggle('done', wifiDone);
+  $('setupCardMotor')?.classList.toggle('done', true);
   $('setupCardTag')?.classList.toggle('done', tagDone);
   $('setupCardBlynk')?.classList.toggle('done', blynkDone);
+  $('setupCardAdminPin')?.classList.toggle('done', adminPinDone);
 
   const subWifi = $('setupSubWifi');
   if (subWifi) {
     subWifi.textContent = wifiDone
       ? `เชื่อมแล้ว · ${curSettings.staIp || curSettings.wifiSsid || 'Wi‑Fi บ้าน'}`
       : 'เชื่อมต่อ Wi‑Fi บ้านเพื่อสั่งงานผ่านแอปและตั้งเวลาอัตโนมัติ';
+  }
+  const subMotor = $('setupSubMotor');
+  if (subMotor) {
+    subMotor.textContent = motorRev
+      ? 'ทิศทาง: กลับทิศทาง (ขวา) · หากเลื่อนเปิดผิดทางให้กดสลับ'
+      : 'ทิศทาง: ปกติ (ซ้าย) · หากเลื่อนเปิดผิดทางให้กดสลับ';
+  }
+  const revBtn = $('btnWizReverseMotor');
+  if (revBtn) {
+    revBtn.textContent = motorRev ? 'สลับกลับเป็นทิศทางปกติ (ซ้าย)' : 'สลับเป็นทิศทางกลับด้าน (ขวา)';
   }
   const subTag = $('setupSubTag');
   if (subTag) {
@@ -101,8 +115,14 @@ function refreshSetupWizardUi(settings, blynk, tagCount) {
       ? 'ตั้งค่า Blynk แล้ว'
       : 'เชื่อมต่อแอปบนมือถือ เพื่อสั่งเปิด-ปิดประตูจากทุกที่';
   }
+  const subAdminPin = $('setupSubAdminPin');
+  if (subAdminPin) {
+    subAdminPin.textContent = adminPinDone
+      ? 'ตั้งรหัสผ่านความปลอดภัยแล้ว'
+      : 'ป้องกันบุคคลอื่นในวง Wi‑Fi แอบสั่งเปิดประตูหรือแก้ไขการตั้งค่า';
+  }
   const prog = $('setupProg');
-  if (prog) prog.textContent = (wifiDone ? 1 : 0) + (tagDone ? 1 : 0) + (blynkDone ? 1 : 0) + '/3';
+  if (prog) prog.textContent = (wifiDone ? 1 : 0) + 1 + (tagDone ? 1 : 0) + (blynkDone ? 1 : 0) + (adminPinDone ? 1 : 0) + '/5';
 }
 
 async function refreshSetupWizard(tagsCountOverride) {
@@ -164,6 +184,9 @@ async function loadSettingsForm() {
   }
   if (statusInfo?.fwVersion) {
     State.fwVersion = statusInfo.fwVersion;
+  }
+  if (statusInfo && statusInfo.maintenance) {
+    updateMaintenanceUi(statusInfo.maintenance);
   }
   if (statusInfo && statusInfo.ota && typeof renderOtaStatus === 'function') {
     renderOtaStatus(statusInfo.ota, statusInfo);
@@ -284,3 +307,204 @@ function togglePw(id, btn) {
   inp.type = show ? 'text' : 'password';
   if (btn) btn.style.opacity = show ? '1' : '.55';
 }
+
+async function wizardTestOpen() {
+  const btn = $('btnWizTestOpen');
+  if (btn) btn.disabled = true;
+  setHint('wizMotorMsg', '', 'กำลังส่งคำสั่งเปิดประตูทดสอบ...');
+  try {
+    const res = await api('/api/door', { method: 'POST', body: { slot: 'open' } });
+    if (res.ok !== false) {
+      setHint('wizMotorMsg', 'hint ok', 'ส่งคำสั่งเปิดประตูแล้ว — สังเกตว่าประตูเปิดจริงหรือไม่ หากประตูปิดให้กด "สลับทิศทาง"');
+    } else {
+      setHint('wizMotorMsg', 'hint err', 'ส่งคำสั่งไม่สำเร็จ');
+    }
+  } catch (e) {
+    setHint('wizMotorMsg', 'hint err', 'เกิดข้อผิดพลาดในการสั่งเปิด');
+  } finally {
+    setTimeout(() => { if (btn) btn.disabled = false; }, 2000);
+  }
+}
+
+async function wizardToggleMotorReverse() {
+  const btn = $('btnWizReverseMotor');
+  if (btn) btn.disabled = true;
+  const currentRev = !!State.settingsCache?.motorReverse;
+  const newRev = !currentRev;
+  setHint('wizMotorMsg', '', 'กำลังสลับทิศทางมอเตอร์...');
+  try {
+    const res = await api('/api/settings', { method: 'PUT', body: { motorReverse: newRev } });
+    if (res.ok) {
+      if (!State.settingsCache) State.settingsCache = {};
+      State.settingsCache.motorReverse = newRev;
+      if ($('swMotorReverse')) $('swMotorReverse').checked = newRev;
+      const statusTxt = newRev ? 'กลับทิศทาง (ขวา)' : 'ปกติ (ซ้าย)';
+      setHint('wizMotorMsg', 'hint ok', `สลับทิศทางมอเตอร์เป็น "${statusTxt}" สำเร็จ! แนะนำกดทดสอบเปิดอีกครั้ง`);
+      refreshSetupWizardUi(State.settingsCache, State.blynkCache, State.tagCount);
+    } else {
+      setHint('wizMotorMsg', 'hint err', 'บันทึกทิศทางไม่สำเร็จ');
+    }
+  } catch (e) {
+    setHint('wizMotorMsg', 'hint err', 'เกิดข้อผิดพลาดในการบันทึก');
+  } finally {
+    setTimeout(() => { if (btn) btn.disabled = false; }, 1000);
+  }
+}
+
+async function wizardSaveAdminPin() {
+  const inp = $('wizAdminPass');
+  const pass = inp?.value?.trim() || '';
+  if (!pass || pass.length < 4) {
+    setHint('wizAdminPinMsg', 'hint err', 'กรุณาระบุรหัสผ่านอย่างน้อย 4 ตัวอักษร');
+    return;
+  }
+  setHint('wizAdminPinMsg', '', 'กำลังบันทึกรหัสผ่าน...');
+  try {
+    const res = await api('/api/webauth', {
+      method: 'POST',
+      body: { password: pass }
+    });
+    if (res.hasPassword) {
+      State.webAuthHasPassword = true;
+      setHint('wizAdminPinMsg', 'hint ok', 'ตั้งรหัสผ่านความปลอดภัยสำเร็จแล้ว!');
+      inp.value = '';
+      refreshSetupWizardUi(State.settingsCache, State.blynkCache, State.tagCount);
+      loadWebAuthUi();
+    } else {
+      setHint('wizAdminPinMsg', 'hint err', 'บันทึกไม่สำเร็จ');
+    }
+  } catch (e) {
+    setHint('wizAdminPinMsg', 'hint err', 'เกิดข้อผิดพลาดในการบันทึก: ' + e.message);
+  }
+}
+
+function setupGoWebAuth() {
+  showView('settings');
+  openSetGroup('setGroupSystem');
+  openSetGroup('cardWebAuth');
+  setupScrollTo($('cardWebAuth'));
+}
+
+function goToMaintenance() {
+  showView('settings');
+  openSetGroup('setGroupDoor');
+  openSetGroup('cardMaintenance');
+  setupScrollTo($('cardMaintenance'));
+}
+
+function updateMaintenanceUi(maint) {
+  if (!maint) return;
+  State.maintenanceCache = maint;
+  if ($('maintTotalCycles')) $('maintTotalCycles').textContent = (maint.totalCycles ?? 0).toLocaleString();
+  if ($('maintServiceCycles')) $('maintServiceCycles').textContent = (maint.serviceCycles ?? 0).toLocaleString();
+  if ($('maintLastDate')) $('maintLastDate').textContent = maint.lastServiceDate || 'ยังไม่มีประวัติ';
+  if ($('maintThresholdInp')) $('maintThresholdInp').value = maint.serviceThreshold || 5000;
+
+  const isDue = !!maint.serviceDue;
+  const alertBanner = $('maintAlertBanner');
+  if (alertBanner) alertBanner.classList.toggle('hidden', !isDue);
+
+  const dashAlert = $('dashMaintenanceAlert');
+  if (dashAlert) dashAlert.classList.toggle('hidden', !isDue);
+
+  const badge = $('maintHeadBadge');
+  if (badge) {
+    if (isDue) {
+      badge.textContent = 'ถึงกำหนดเช็ค!';
+      badge.className = 'badgeMini warn';
+    } else {
+      badge.textContent = `${(maint.serviceCycles ?? 0).toLocaleString()} รอบ`;
+      badge.className = 'badgeMini';
+    }
+  }
+}
+
+async function resetServiceReminder() {
+  if (!confirm('ยืนยันว่าทำการตรวจเช็คความตึงโซ่ หยอดจาระบี และตรวจรางเลื่อนเรียบร้อยแล้ว?\nระบบจะทำการรีเซ็ตตัวนับรอบการเช็คระยะเป็น 0 และบันทึกวันที่ปัจจุบัน')) {
+    return;
+  }
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const dateStr = `${y}-${m}-${d}`;
+
+  setHint('maintResetMsg', '', 'กำลังบันทึกการเช็คระยะ...');
+  try {
+    const res = await api('/api/maintenance/reset-service', {
+      method: 'POST',
+      body: { date: dateStr }
+    });
+    if (res.ok) {
+      setHint('maintResetMsg', 'hint ok', 'บันทึกการตรวจเช็คระยะเรียบร้อยแล้ว (รีเซ็ตรอบเป็น 0)');
+      if (State.maintenanceCache) {
+        State.maintenanceCache.serviceCycles = 0;
+        State.maintenanceCache.serviceDue = false;
+        State.maintenanceCache.lastServiceDate = dateStr;
+        updateMaintenanceUi(State.maintenanceCache);
+      }
+    } else {
+      setHint('maintResetMsg', 'hint err', 'บันทึกไม่สำเร็จ');
+    }
+  } catch (e) {
+    setHint('maintResetMsg', 'hint err', 'เกิดข้อผิดพลาดในการบันทึก');
+  }
+}
+
+async function saveMaintenanceThreshold() {
+  const inp = $('maintThresholdInp');
+  const val = parseInt(inp?.value, 10);
+  if (!val || val < 100 || val > 100000) {
+    setHint('maintThreshMsg', 'hint err', 'กรุณาระบุจำนวนรอบระหว่าง 100 ถึง 100,000 รอบ');
+    return;
+  }
+  setHint('maintThreshMsg', '', 'กำลังบันทึก...');
+  try {
+    const res = await api('/api/maintenance/settings', {
+      method: 'POST',
+      body: { threshold: val }
+    });
+    if (res.ok) {
+      setHint('maintThreshMsg', 'hint ok', `บันทึกรอบแจ้งเตือนเป็น ${val.toLocaleString()} รอบแล้ว`);
+      if (State.maintenanceCache) {
+        State.maintenanceCache.serviceThreshold = val;
+        State.maintenanceCache.serviceDue = (State.maintenanceCache.serviceCycles >= val);
+        updateMaintenanceUi(State.maintenanceCache);
+      }
+    } else {
+      setHint('maintThreshMsg', 'hint err', 'บันทึกไม่สำเร็จ');
+    }
+  } catch (e) {
+    setHint('maintThreshMsg', 'hint err', 'เกิดข้อผิดพลาดในการบันทึก');
+  }
+}
+
+async function confirmAndFactoryReset() {
+  const confirmed = confirm(
+    "⚠️ คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตการตั้งค่าระบบทั้งหมดเป็นค่าเริ่มต้นโรงงาน (Factory Reset)?\n\n" +
+    "• การตั้งค่า Wi‑Fi, รหัสผ่าน, และระบบจะถูกล้างใหม่ทั้งหมด\n" +
+    "• Tag และรีโมททั้งหมดจะยังคงอยู่ ไม่สูญหาย\n" +
+    "• ตัวเครื่องจะรีสตาร์ทกลับสู่โหมดเริ่มต้น (Setup Wizard)"
+  );
+  if (!confirmed) return;
+
+  setHint('factoryResetMsg', 'hint warn', 'กำลังดำเนินการรีเซ็ตค่าโรงงาน กรุณารอสักครู่...');
+  try {
+    const res = await api('/api/system/factory-reset', { method: 'POST' });
+    if (res.ok) {
+      setHint('factoryResetMsg', 'hint ok', 'รีเซ็ตสำเร็จแล้ว! เครื่องกำลังรีสตาร์ท...');
+      setTimeout(() => {
+        alert('ตัวเครื่องได้ทำการรีเซ็ตเรียบร้อยแล้วและกำลังรีสตาร์ท\nกรุณาเชื่อมต่อ Wi-Fi "AutoLink-XXXX" เพื่อเข้าสู่ตัวช่วยตั้งค่าเริ่มต้น (Setup Wizard)');
+        window.location.href = 'http://192.168.4.1/';
+      }, 2500);
+    } else {
+      setHint('factoryResetMsg', 'hint err', 'รีเซ็ตไม่สำเร็จ: ' + (res.msg || 'error'));
+    }
+  } catch (e) {
+    setHint('factoryResetMsg', 'hint ok', 'เครื่องกำลังรีสตาร์ทเข้าสู่โหมดเริ่มต้น...');
+    setTimeout(() => {
+      window.location.href = 'http://192.168.4.1/';
+    }, 3000);
+  }
+}
+
