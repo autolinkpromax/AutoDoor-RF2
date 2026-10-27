@@ -1,7 +1,7 @@
 {
-  "version": "1.0.2",
-  "releaseDate": "2026-10-26 14:03:09 UTC",
+  "version": "1.0.3",
+  "releaseDate": "2026-10-27 06:46:51 UTC",
   "targetChip": "ESP32-C3",
   "file": "firmware_autodoor_ota.bin",
-  "changelog": "V1.0.2: เพิ่มกำลังส่ง ESP-NOW (19.5 dBm), ขยายคิวรับสัญญาณ 32 ช่อง, ลดช่วงเวลาประกาศ idle (500ms) ล็อกแท็กเร็วขึ้น 2 เท่า, แก้ไขระบบจับเวลาอัตโนมัติให้บังคับปิดทันทีตามเซ็นเซอร์แม่เหล็กจริง"
+  "changelog": "V1.0.3: แก้ไขปัญหาไฟตก ปรับ Staged Boot และลด Peak Current Wi-Fi เพื่อความเสถียร"
 }
