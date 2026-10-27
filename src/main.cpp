@@ -28,7 +28,7 @@
 
 void setup() {
   Serial.begin(115200);
-  delay(300);
+  delay(800);  // Extended PSU settle time: allows motor board AUX supply to reach stable voltage before WiFi radio turns on
   gBootMs = millis();
   Serial.println();
   Serial.println("=== AutoDoor ESP-NOW ===");
@@ -93,13 +93,25 @@ void setup() {
   gSystemBootReady = true;
   Serial.println("[boot] Core ready: door ground truth confirmed, RF433 receiver active");
 
-  setupWifiApSta();
+  // ─── PHASE 1: WiFi Radio (SoftAP only, STA deferred) ───────────────────────
+  // SoftAP เปิดก่อน TX Power 17dBm — ยังไม่ WiFi.begin() STA ทันที
+  // STA connect จะเกิดใน stepWiFiReconnect() loop หลัง ~5 วินาที เมื่อ PSU เสถียรแล้ว
+  Serial.println("[boot] Phase 1: WiFi SoftAP init (STA connect deferred)...");
+  setupWifiApStaPhased();
+
+  // ─── PHASE 2: ESP-NOW Init (ห่าง 400ms หลัง SoftAP) ────────────────────────
+  // รอให้ WiFi radio settle ก่อน init ESP-NOW เพื่อป้องกัน peak current ซ้อนกัน
+  delay(400);
   if (!gSafeMode) {
+    Serial.println("[boot] Phase 2: ESP-NOW init...");
     initEspNow();
   } else {
     Serial.println("[safe] ESP-NOW suspended on boot (Safe Mode active)");
   }
 
+  // ─── PHASE 3: WebServer + Cloud Services Config (ห่าง 200ms) ──────────────
+  // WebServer เบา, MQTT/Blynk จะ connect เองใน loop() หลัง WiFi STA connected
+  delay(200);
   setupWebServer();
   initMqttService();
   Serial.printf("[boot] wifi ch=%d espnow ch=%u\n", WiFi.channel(), (unsigned)currentEspNowChannel());
@@ -110,7 +122,7 @@ void setup() {
     triggerSafeModeAlertSound();
     gMotor.triggerChirp(2);
   }
-  Serial.println("[boot] Network ready: Wi-Fi, WebServer & ESP-NOW active");
+  Serial.println("[boot] Staged boot complete: SoftAP+ESP-NOW ready. STA+Cloud pending in loop().");
 }
 
 struct ButtonChannel {

@@ -1,7 +1,7 @@
 {
-  "version": "1.0.2",
-  "releaseDate": "2026-10-26 14:09:59 UTC",
+  "version": "1.0.3",
+  "releaseDate": "2026-10-27 06:46:51 UTC",
   "targetChip": "ESP32-C3",
   "file": "firmware_autodoor_ota.bin",
-  "changelog": "V1.0.2: ปรับปรุงประสิทธิภาพและความเสถียรของระบบ"
+  "changelog": "V1.0.3: แก้ไขปัญหาไฟตก ปรับ Staged Boot และลด Peak Current Wi-Fi เพื่อความเสถียร"
 }

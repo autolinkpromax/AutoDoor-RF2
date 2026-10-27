@@ -8,6 +8,7 @@ void snapshotStaIpToPrefs();
 void clearHomeWifiPrefs();
 
 void setupWifiApSta();
+void setupWifiApStaPhased();  // Staged boot: SoftAP-only init, STA connect deferred to loop()
 void applyWifiTxPower();
 void autoDetectEspNowChannelOnBoot();
 bool persistEspNowChannel(uint8_t ch);

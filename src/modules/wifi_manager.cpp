@@ -379,6 +379,12 @@ void stepWiFiReconnect() {
   }
 
   const String& staPass = getCachedStaPass();
+  // Re-enable auto-reconnect on first STA connect attempt from loop()
+  // (was disabled during staged boot phase to prevent peak current overlap)
+  if (!WiFi.getAutoReconnect()) {
+    WiFi.setAutoReconnect(true);
+    Serial.println("[wifi] Auto-reconnect re-enabled (phased boot complete)");
+  }
   WiFi.begin(staSsid.c_str(), staPass.c_str());
   esp_wifi_set_channel(gEspNowChannel, WIFI_SECOND_CHAN_NONE);
 
@@ -456,4 +462,30 @@ void setupWifiApSta() {
   esp_wifi_set_channel(gEspNowChannel, WIFI_SECOND_CHAN_NONE);
 
   startMdns();
+}
+
+// ==============================================================================
+// setupWifiApStaPhased() — Staged Boot Variant (Power Safety)
+// ==============================================================================
+// ใช้แทน setupWifiApSta() ในช่วง setup() เพื่อกระจาย peak current ออกจากกัน
+// SoftAP เปิดทันที — แต่ STA connect จะเกิดใน stepWiFiReconnect() ใน loop()
+// หลังจาก PSU ของมอเตอร์ประตู stabilize และ ESP-NOW init เสร็จแล้ว (ห่างกัน 5+ วินาที)
+// ==============================================================================
+void setupWifiApStaPhased() {
+  // ปิด auto reconnect ก่อน — จะเปิดใหม่ใน stepWiFiReconnect() loop แรก
+  WiFi.setAutoReconnect(false);
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.setSleep(false);
+  applyWifiTxPower();  // ใช้ kWifiTxPowerDbm จาก config.h (17.0 dBm)
+
+  const String host = resolveHostname();
+  WiFi.setHostname(host.c_str());
+  startSoftAp();       // SoftAP only — ยังไม่ WiFi.begin() STA
+
+  gWifiStatic = gPrefs.getBool("wifiStatic", false);
+  esp_wifi_set_channel(gEspNowChannel, WIFI_SECOND_CHAN_NONE);
+  startMdns();
+  // NOTE: WiFi STA connect ถูก defer ไปยัง stepWiFiReconnect() ใน loop()
+  //       จะเกิดขึ้นหลัง ~5 วินาที เมื่อ PSU เสถียรและ ESP-NOW init เสร็จแล้ว
+  Serial.println("[wifi-phased] SoftAP ready. STA connect deferred to loop() ~5s");
 }

@@ -2544,7 +2544,7 @@ static const char a16_loader_8bdfb5_js[] PROGMEM =
 static const size_t a16_loader_8bdfb5_js_len = 3148;
 
 static const char a17_manifest_json[] PROGMEM =
-  "{\"build\":\"20261026-140143\",\"core\":{\"css\":[\"base.d2ff82.css\",\"components.9b2698.css\",\"loader.91ff4f.css\"],\"js\":[\"app-bund"
+  "{\"build\":\"20261027-064407\",\"core\":{\"css\":[\"base.d2ff82.css\",\"components.9b2698.css\",\"loader.91ff4f.css\"],\"js\":[\"app-bund"
   "le.6844dd.js\"]},\"views\":{\"dash\":{\"html\":\"dash.18f897.html\",\"css\":[\"gate.e5ece7.css\"],\"js\":[]},\"devices\":{\"html\":\"devices"
   ".ce73b3.html\",\"css\":[\"devices.08f800.css\"],\"js\":[]},\"settings\":{\"html\":\"settings.aee733.html\",\"css\":[\"settings.45c19a.cs"
   "s\"],\"js\":[]},\"editor\":{\"html\":\"editor.21676d.html\",\"css\":[\"editor.d059f6.css\"],\"js\":[]}},\"partials\":{\"login\":\"login.f112"
@@ -2588,7 +2588,7 @@ static const WebUiAsset kWebUiAssets[] = {
   { "app-bundle.6844dd.js", "application/javascript; charset=utf-8", "\"6844dd\"", a14_app_bundle_6844dd_js, a14_app_bundle_6844dd_js_len, true },
   { "bootstrap.202929.js", "application/javascript; charset=utf-8", "\"202929\"", a15_bootstrap_202929_js, a15_bootstrap_202929_js_len, true },
   { "loader.8bdfb5.js", "application/javascript; charset=utf-8", "\"8bdfb5\"", a16_loader_8bdfb5_js, a16_loader_8bdfb5_js_len, true },
-  { "manifest.json", "application/json; charset=utf-8", "\"9194e4\"", a17_manifest_json, a17_manifest_json_len, false },
+  { "manifest.json", "application/json; charset=utf-8", "\"555623\"", a17_manifest_json, a17_manifest_json_len, false },
   { "index.html", "text/html; charset=utf-8", "\"075845\"", a18_index_html, a18_index_html_len, false },
 };
 static const size_t kWebUiAssetCount = 19;
