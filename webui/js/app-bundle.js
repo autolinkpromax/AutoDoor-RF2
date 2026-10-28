@@ -3539,6 +3539,9 @@ function toggleSetupWizard() {
 }
 
 function toggleSetGroup(groupId) {
+  if (groupId === 'cardWebAuth' || groupId === 'cardSafeMode') {
+    groupId = 'cardSecurityAccess';
+  }
   const card = $(groupId);
   const body = $(groupId + 'Body');
   if (!card || !body) return;
@@ -3557,6 +3560,9 @@ function toggleSetGroup(groupId) {
 }
 
 function openSetGroup(groupId) {
+  if (groupId === 'cardWebAuth' || groupId === 'cardSafeMode') {
+    groupId = 'cardSecurityAccess';
+  }
   const card = $(groupId);
   const body = $(groupId + 'Body');
   if (!card || !body) return;
