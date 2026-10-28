@@ -1,7 +1,7 @@
 {
-  "version": "1.0.6",
-  "releaseDate": "2026-10-28 04:16:12 UTC",
+  "version": "1.0.7",
+  "releaseDate": "2026-10-28 04:49:06 UTC",
   "targetChip": "ESP32-C3",
   "file": "firmware_autodoor_ota.bin",
-  "changelog": "v1.0.6: Webhook เปิดแบบ Tag (/hook/door/tag_open), ปรับความไวเซ็นเซอร์กันหนีบสำหรับจักรยาน, รองรับทศนิยมวินาที"
+  "changelog": "v1.0.7: Webhook สั่งงานนอกบ้านผ่าน Blynk Cloud (V7 Tag Auto-Close), โหลดรายชื่อ Tag อัตโนมัติ"
 }
