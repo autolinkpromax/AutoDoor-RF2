@@ -1,7 +1,7 @@
 {
-  "version": "1.0.5",
-  "releaseDate": "2026-10-27 12:45:52 UTC",
+  "version": "1.0.6",
+  "releaseDate": "2026-10-28 04:16:12 UTC",
   "targetChip": "ESP32-C3",
   "file": "firmware_autodoor_ota.bin",
-  "changelog": "v1.0.5: เพิ่มความเร็ว Real-time Webhook (ลด gap เหลือ 50ms, คิว 8, ปรับ Priority 2)"
+  "changelog": "v1.0.6: Webhook เปิดแบบ Tag (/hook/door/tag_open), ปรับความไวเซ็นเซอร์กันหนีบสำหรับจักรยาน, รองรับทศนิยมวินาที"
 }
