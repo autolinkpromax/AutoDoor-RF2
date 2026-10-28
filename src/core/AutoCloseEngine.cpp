@@ -142,9 +142,11 @@ void AutoCloseEngine::update(const AutoCloseContext& ctx, IDoorExecutor* executo
   // If the door has been Open or Stopped for > 3 minutes (180s) without active tags (or passage already crossed), force auto-close for safety
   // One-shot cooldown: maximum one failsafe attempt per 5 seconds to prevent log flooding
   // when executeSlot triggers a deadband that keeps the door in Stopped state.
+  const uint32_t configuredHoldMs = (ctx.fallbackDelayMs > 0) ? ctx.fallbackDelayMs : kDefaultTagCloseDelayMs;
+  const uint32_t failsafeTimeoutMs = max((uint32_t)180000UL, configuredHoldMs + 30000UL);
   const bool failsafePassage = (ctx.hasPassageCrossed && ctx.isSafetySensorEnabled);
   if ((ctx.doorState == DoorState::Open || ctx.doorState == DoorState::Stopped) && ctx.doorOpenedAtMs != 0 &&
-      (uint32_t)(now - ctx.doorOpenedAtMs) > 180000UL && (!ctx.anyActiveNonSuppressed || failsafePassage)) {
+      (uint32_t)(now - ctx.doorOpenedAtMs) > failsafeTimeoutMs && (!ctx.anyActiveNonSuppressed || failsafePassage)) {
     if (!(ctx.isSafetySensorEnabled && ctx.isSafetySensorBlocked)) {
       if ((uint32_t)(now - _lastFailsafeAtMs) >= 5000) {
         _lastFailsafeAtMs = now;

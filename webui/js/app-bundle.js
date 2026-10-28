@@ -3457,7 +3457,7 @@ function updateWebhookGeneratorUrl() {
           vVal = '1';
         }
       }
-      url = `${blynkBase}&V7=${encodeURIComponent(vVal)}`;
+      url = `${blynkBase}&V7=${vVal}`;
     } else if (mode === 'open') {
       url = `${blynkBase}&V0=1`;
     } else if (mode === 'stop') {

@@ -41,10 +41,10 @@ public:
   /**
    * @brief Enqueue door action from FreeRTOS task or interrupt.
    */
-  bool requestAction(DoorCmdAction action, bool manualCommand, bool manualHold = false, const char* tagId = nullptr, bool bypassPreStop = false);
-  bool requestSlot(const char* slot, bool manualCommand, bool manualHold = false, const char* tagId = nullptr, bool bypassPreStop = false);
-  bool requestSlot(const String& slot, bool manualCommand, bool manualHold = false, const char* tagId = nullptr, bool bypassPreStop = false) {
-    return requestSlot(slot.c_str(), manualCommand, manualHold, tagId, bypassPreStop);
+  bool requestAction(DoorCmdAction action, bool manualCommand, bool manualHold = false, const char* tagId = nullptr, bool bypassPreStop = false, uint32_t customCloseDelayMs = 0);
+  bool requestSlot(const char* slot, bool manualCommand, bool manualHold = false, const char* tagId = nullptr, bool bypassPreStop = false, uint32_t customCloseDelayMs = 0);
+  bool requestSlot(const String& slot, bool manualCommand, bool manualHold = false, const char* tagId = nullptr, bool bypassPreStop = false, uint32_t customCloseDelayMs = 0) {
+    return requestSlot(slot.c_str(), manualCommand, manualHold, tagId, bypassPreStop, customCloseDelayMs);
   }
 
   /**

@@ -205,6 +205,11 @@ BLYNK_WRITE(V7) {
   Serial.printf("[blynk] V7 (Tag Auto Open) rx: '%s'\n", paramStr.c_str());
   if (paramStr.isEmpty() || paramStr == "0") return;
 
+  paramStr.replace("%3A", ":");
+  paramStr.replace("%3a", ":");
+  paramStr.replace("%2C", ",");
+  paramStr.replace("%2c", ",");
+
   // Extract optional tag_id and custom delay
   String tagId = "";
   uint32_t customDelaySec = 0;
@@ -280,7 +285,7 @@ BLYNK_WRITE(V7) {
     gDoorController.autoCloseEngine().armPendingClose(now + tagCloseDelay);
     ok = true;
   } else {
-    ok = requestDoorSlot("open", false /* manualCommand = false */, false /* manualHold = false */, gActiveTriggerTagId.c_str());
+    ok = requestDoorSlot("open", false /* manualCommand = false */, false /* manualHold = false */, gActiveTriggerTagId.c_str(), false /* bypassPreStop */, tagCloseDelay);
   }
 
   if (ok) {

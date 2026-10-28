@@ -80,7 +80,7 @@ constexpr uint32_t kStagedMqttDelayMs = 5000;
 constexpr uint32_t kStagedNtpDelayMs = 8000;
 
 
-constexpr const char* kFirmwareVersion = "1.0.8";
+constexpr const char* kFirmwareVersion = "1.0.9";
 constexpr const char* kFirmwareBuildDate = __DATE__ " " __TIME__;
 
 constexpr uint32_t kDefaultRelayPulseMs = 300;

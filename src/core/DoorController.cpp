@@ -88,16 +88,22 @@ void DoorController::initCommandQueue() {
   }
 }
 
-bool DoorController::requestAction(DoorCmdAction action, bool manualCommand, bool manualHold, const char* tagId, bool bypassPreStop) {
+bool DoorController::requestAction(DoorCmdAction action, bool manualCommand, bool manualHold, const char* tagId, bool bypassPreStop, uint32_t customCloseDelayMs) {
   if (tagId && tagId[0] != '\0') {
     TagStoreLock lock;
     Tag* t = _tagRegistry.findById(tagId);
     if (t) {
       gActiveTriggerTagId = t->id;
-      gPrevActiveDelayMaxMs = (t->tagCloseDelayMs > 0) ? t->tagCloseDelayMs : kDefaultTagCloseDelayMs;
+      if (customCloseDelayMs > 0) {
+        gPrevActiveDelayMaxMs = customCloseDelayMs;
+      } else {
+        gPrevActiveDelayMaxMs = (t->tagCloseDelayMs > 0) ? t->tagCloseDelayMs : kDefaultTagCloseDelayMs;
+      }
       gPrevActiveSafetyDelayMs = (t->tagSafetyCloseDelayMs > 0) ? t->tagSafetyCloseDelayMs : gSafetyCloseDelayMs;
       _tagOpenDurationMs = t->tagOpenDurationMs;
     }
+  } else if (customCloseDelayMs > 0) {
+    gPrevActiveDelayMaxMs = customCloseDelayMs;
   } else if (manualCommand) {
     gActiveTriggerTagId = "";
   }
@@ -108,6 +114,7 @@ bool DoorController::requestAction(DoorCmdAction action, bool manualCommand, boo
   cmd.isManual = manualCommand;
   cmd.manualHold = manualHold;
   cmd.bypassPreStop = bypassPreStop;
+  cmd.customCloseDelayMs = customCloseDelayMs;
   if (tagId && tagId[0] != '\0') {
     strncpy(cmd.tagId, tagId, sizeof(cmd.tagId) - 1);
     cmd.tagId[sizeof(cmd.tagId) - 1] = '\0';
@@ -117,11 +124,11 @@ bool DoorController::requestAction(DoorCmdAction action, bool manualCommand, boo
   return xQueueSend(_cmdQueue, &cmd, 0) == pdTRUE;
 }
 
-bool DoorController::requestSlot(const char* slot, bool manualCommand, bool manualHold, const char* tagId, bool bypassPreStop) {
+bool DoorController::requestSlot(const char* slot, bool manualCommand, bool manualHold, const char* tagId, bool bypassPreStop, uint32_t customCloseDelayMs) {
   if (!slot) return false;
-  if (strcmp(slot, "open") == 0) return requestAction(DoorCmdAction::Open, manualCommand, manualHold, tagId, bypassPreStop);
-  if (strcmp(slot, "close") == 0) return requestAction(DoorCmdAction::Close, manualCommand, manualHold, tagId, bypassPreStop);
-  if (strcmp(slot, "stop") == 0) return requestAction(DoorCmdAction::Stop, manualCommand, manualHold, tagId, bypassPreStop);
+  if (strcmp(slot, "open") == 0) return requestAction(DoorCmdAction::Open, manualCommand, manualHold, tagId, bypassPreStop, customCloseDelayMs);
+  if (strcmp(slot, "close") == 0) return requestAction(DoorCmdAction::Close, manualCommand, manualHold, tagId, bypassPreStop, customCloseDelayMs);
+  if (strcmp(slot, "stop") == 0) return requestAction(DoorCmdAction::Stop, manualCommand, manualHold, tagId, bypassPreStop, customCloseDelayMs);
   return false;
 }
 
@@ -296,8 +303,9 @@ bool DoorController::executeOpen(bool manualCommand, bool manualHold, bool bypas
     } else if (!_isManualOpenState && !gSafeMode && gTagAutoEnabled) {
       _tagOpenStopAtMs = 0;
       uint32_t delayMs = (gPrevActiveDelayMaxMs > 0) ? gPrevActiveDelayMaxMs : kDefaultTagCloseDelayMs;
-      _autoClose.armPendingClose(now + delayMs);
-      Serial.printf("[door] open started -> auto-close countdown armed for %lu ms\n", (unsigned long)delayMs);
+      _autoClose.armPendingClose(now + gDoorTransitionMs + delayMs);
+      Serial.printf("[door] open started -> auto-close countdown armed for %lu ms (transition %lu ms + hold %lu ms)\n",
+                    (unsigned long)(gDoorTransitionMs + delayMs), (unsigned long)gDoorTransitionMs, (unsigned long)delayMs);
     } else {
       _tagOpenStopAtMs = 0;
       _autoClose.disarmPendingClose();
@@ -458,10 +466,16 @@ void DoorController::processLayer1Sensors(uint32_t now) {
         Tag* t = _tagRegistry.findById(cmd.tagId);
         if (t) {
           gActiveTriggerTagId = t->id;
-          gPrevActiveDelayMaxMs = (t->tagCloseDelayMs > 0) ? t->tagCloseDelayMs : kDefaultTagCloseDelayMs;
+          if (cmd.customCloseDelayMs > 0) {
+            gPrevActiveDelayMaxMs = cmd.customCloseDelayMs;
+          } else {
+            gPrevActiveDelayMaxMs = (t->tagCloseDelayMs > 0) ? t->tagCloseDelayMs : kDefaultTagCloseDelayMs;
+          }
           gPrevActiveSafetyDelayMs = (t->tagSafetyCloseDelayMs > 0) ? t->tagSafetyCloseDelayMs : gSafetyCloseDelayMs;
           _tagOpenDurationMs = t->tagOpenDurationMs;
         }
+      } else if (cmd.customCloseDelayMs > 0) {
+        gPrevActiveDelayMaxMs = cmd.customCloseDelayMs;
       } else if (cmd.isManual) {
         gActiveTriggerTagId = "";
       }
@@ -505,6 +519,10 @@ void DoorController::processLayer1Sensors(uint32_t now) {
       _isManualOpenState = true;  // Opened externally -> Hold open permanently
       _autoClose.disarmAll();
       _tagRegistry.snapshotBaseline(now);
+    } else if (!_isManualOpenState && !gSafeMode && gTagAutoEnabled && _tagOpenStopAtMs == 0) {
+      uint32_t delayMs = (gPrevActiveDelayMaxMs > 0) ? gPrevActiveDelayMaxMs : kDefaultTagCloseDelayMs;
+      _autoClose.armPendingClose(now + delayMs);
+      Serial.printf("[door] builtin open limit -> armed hold open for %lu ms\n", (unsigned long)delayMs);
     }
     _doorState = DoorState::Open;
     _doorTransitionEndMs = 0;
@@ -827,7 +845,7 @@ void DoorController::processLayer5Timers(uint32_t now) {
     const uint32_t graceMs = (_doorState == DoorState::Closing && gMagSensorEnabled) ? 3000 : 0;
     if ((int32_t)(now - (_doorTransitionEndMs + graceMs)) >= 0) {
       if (_doorState == DoorState::Opening) {
-        if (_doorOpenedAtMs == 0) _doorOpenedAtMs = now;
+        _doorOpenedAtMs = now;
         _doorState = DoorState::Open;
         _doorMotionStoppedAtMs = now;
         _doorTransitionEndMs = 0;

@@ -105,6 +105,7 @@ struct DoorCommand {
   bool manualHold;
   bool bypassPreStop = false;
   char tagId[16] = {0};
+  uint32_t customCloseDelayMs = 0;
 };
 
 enum class DoorEventLevel : uint8_t {

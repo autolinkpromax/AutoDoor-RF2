@@ -168,7 +168,7 @@ void DoorApiController::handleHookDoorTagOpen() {
     ok = true;
   } else {
     // Closed, Closing, or Stopped: request Open with manualHold = false (Tag Auto Mode)
-    ok = requestDoorSlot("open", false /* manualCommand = false */, false /* manualHold = false */, gActiveTriggerTagId.c_str());
+    ok = requestDoorSlot("open", false /* manualCommand = false */, false /* manualHold = false */, gActiveTriggerTagId.c_str(), false /* bypassPreStop */, tagCloseDelay);
   }
 
   if (ok) {
