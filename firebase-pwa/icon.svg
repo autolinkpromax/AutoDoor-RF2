@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#0f172a"/>
+  <rect x="36" y="36" width="440" height="440" rx="80" fill="url(#grad)" stroke="#38bdf8" stroke-width="8"/>
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+  <!-- Garage Shutter Door Icon -->
+  <path d="M120 120h272v272H120z" fill="#090d16" stroke="#475569" stroke-width="12"/>
+  <rect x="140" y="140" width="232" height="40" rx="4" fill="#38bdf8"/>
+  <rect x="140" y="195" width="232" height="40" rx="4" fill="#0284c7"/>
+  <rect x="140" y="250" width="232" height="40" rx="4" fill="#0369a1"/>
+  <rect x="140" y="305" width="232" height="40" rx="4" fill="#075985"/>
+</svg>
+

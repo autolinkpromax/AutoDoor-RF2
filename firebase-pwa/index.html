@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>AutoDoor Control</title>
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AutoDoor">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2338bdf8'%3E%3Cpath d='M19 19V5H5v14H3v2h18v-2h-2zm-2 0H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7V9h10v2z'/%3E%3C/svg%3E">
+  
+  <!-- Firebase SDK (Modular CDN via compat for simple bundle-less single file) -->
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #1e293b, #0f172a);
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      padding-top: max(16px, env(safe-area-inset-top));
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 4px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+    }
+
+    .brand-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: #fff;
+    }
+
+    .brand h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .brand p {
+      font-size: 0.72rem;
+      color: #94a3b8;
+    }
+
+    .cloud-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+      transition: background 0.3s;
+    }
+    .dot.connected {
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    /* Device Selector Card */
+    .device-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 8px 12px;
+    }
+
+    .device-select {
+      background: transparent;
+      border: none;
+      color: #38bdf8;
+      font-weight: 600;
+      font-size: 0.85rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .device-select option {
+      background: #1e293b;
+      color: #f8fafc;
+    }
+
+    /* Door Visual Graphic */
+    .door-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .door-frame {
+      width: 180px;
+      height: 150px;
+      border: 6px solid #475569;
+      border-bottom: 4px solid #94a3b8;
+      border-radius: 8px 8px 0 0;
+      background: #090d16;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .door-shutter {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+      transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+      border-bottom: 4px solid #64748b;
+    }
+
+    .shutter-line {
+      height: 2px;
+      background: rgba(255, 255, 255, 0.12);
+      width: 100%;
+    }
+
+    /* Status Badge */
+    .status-badge {
+      margin-top: 18px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sub-status {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    /* Action Buttons Grid */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .btn {
+      border: none;
+      outline: none;
+      border-radius: 16px;
+      padding: 16px 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn-icon {
+      width: 28px;
+      height: 28px;
+      fill: currentColor;
+    }
+
+    .btn-open {
+      background: linear-gradient(135deg, #059669, #10b981);
+    }
+    .btn-open:active {
+      background: #059669;
+    }
+
+    .btn-close {
+      background: linear-gradient(135deg, #ea580c, #f97316);
+    }
+    .btn-close:active {
+      background: #ea580c;
+    }
+
+    .btn-stop {
+      background: linear-gradient(135deg, #dc2626, #ef4444);
+    }
+    .btn-stop:active {
+      background: #dc2626;
+    }
+
+    .btn-hold {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    }
+    .btn-hold:active {
+      background: #4f46e5;
+    }
+
+    /* Simulator Panel */
+    .sim-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px dashed #38bdf8;
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sim-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sim-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 24px;
+    }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #334155;
+      transition: .3s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #38bdf8;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    .sim-body {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      line-height: 1.4;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 8px 10px;
+      border-radius: 8px;
+    }
+
+    .sim-log {
+      color: #38bdf8;
+      font-family: monospace;
+      font-size: 0.72rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><path d="M19 19V5H5v14H3v2h18v-2h-2zm-2 0H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7V9h10v2z"/></svg>
+        </div>
+        <div>
+          <h1>AutoDoor PWA</h1>
+          <p>Firebase Cloud Remote</p>
+        </div>
+      </div>
+      <div class="cloud-pill">
+        <div class="dot" id="cloudDot"></div>
+        <span id="cloudLabel">Connecting...</span>
+      </div>
+    </div>
+
+    <!-- Multi-Device / Multi-Home Selector -->
+    <div class="device-bar">
+      <span style="font-size:0.75rem; color:#94a3b8;">🏠 ประตู / บ้าน:</span>
+      <select class="device-select" id="deviceSelect" onchange="switchDevice(this.value)">
+        <option value="autodoor_main">บ้านหลัก (Garage Main)</option>
+        <option value="autodoor_house2">บ้านหลังที่ 2 (Gate 2)</option>
+      </select>
+    </div>
+
+    <!-- Door Status & Shutter Animation -->
+    <div class="door-card">
+      <div class="door-frame">
+        <div class="door-shutter" id="doorShutter" style="height: 100%;">
+          <div class="shutter-line"></div>
+          <div class="shutter-line"></div>
+          <div class="shutter-line"></div>
+          <div class="shutter-line"></div>
+          <div class="shutter-line"></div>
+        </div>
+      </div>
+      
+      <div class="status-badge" id="statusBadge">
+        <span>⚪ กำลังโหลดสถานะ...</span>
+      </div>
+      <div class="sub-status" id="subStatus">อัปเดตล่าสุด: กำลังรอข้อมูล</div>
+    </div>
+
+    <!-- Control Buttons -->
+    <div class="controls-grid">
+      <button class="btn btn-open" onclick="sendCommand('open')">
+        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg>
+        <span>เปิด (OPEN)</span>
+      </button>
+
+      <button class="btn btn-close" onclick="sendCommand('close')">
+        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+        <span>ปิด (CLOSE)</span>
+      </button>
+
+      <button class="btn btn-stop" onclick="sendCommand('stop')">
+        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+        <span>หยุด (STOP)</span>
+      </button>
+
+      <button class="btn btn-hold" onclick="sendCommand('hold')">
+        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        <span>ค้างเปิด (HOLD)</span>
+      </button>
+    </div>
+
+    <!-- Virtual ESP32 Simulator (For Testing without Real Hardware) -->
+    <div class="sim-card">
+      <div class="sim-header">
+        <div class="sim-title">
+          <span>⚡ ตัวจำลอง ESP32 ในตัว (Simulator)</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="simToggle" checked onchange="toggleSimulator(this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="sim-body">
+        โหมดจำลองเปิดอยู่: คุณสามารถกดปุ่มสั่งงานบนมือถือเพื่อทดสอบได้ทันที ตัวจำลองจะจำลองพฤติกรรมเปิด-ปิดจริงของประตูให้โดยอัตโนมัติ
+        <div class="sim-log" id="simLog">Sim Status: Idle / Ready</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1. Firebase Configuration (AutoDoor-RF)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBEoo6QJr8EOQjAe9vz6Czs6mMECebiKp0",
+      authDomain: "autodoor-rf.firebaseapp.com",
+      databaseURL: "https://autodoor-rf-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "autodoor-rf",
+      storageBucket: "autodoor-rf.firebasestorage.app",
+      messagingSenderId: "470342635820",
+      appId: "1:470342635820:web:e8621856c6d9efe281dc89"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let currentDeviceId = "autodoor_main";
+    let isSimulatorActive = true;
+    let simTimer = null;
+
+    const cloudDot = document.getElementById("cloudDot");
+    const cloudLabel = document.getElementById("cloudLabel");
+    const doorShutter = document.getElementById("doorShutter");
+    const statusBadge = document.getElementById("statusBadge");
+    const subStatus = document.getElementById("subStatus");
+    const simLog = document.getElementById("simLog");
+
+    // Track Firebase Connection
+    db.ref(".info/connected").on("value", (snap) => {
+      if (snap.val() === true) {
+        cloudDot.classList.add("connected");
+        cloudLabel.innerText = "Online";
+      } else {
+        cloudDot.classList.remove("connected");
+        cloudLabel.innerText = "Offline";
+      }
+    });
+
+    // 2. Listen to Device State in Realtime
+    function subscribeToDevice(deviceId) {
+      const devRef = db.ref(`devices/${deviceId}`);
+      
+      devRef.on("value", (snapshot) => {
+        const data = snapshot.val();
+        if (!data) {
+          // Initialize default node if empty
+          devRef.set({
+            status: "closed",
+            command: "idle",
+            lastUpdate: Date.now()
+          });
+          return;
+        }
+
+        renderDoorState(data.status);
+        if (data.lastUpdate) {
+          const timeStr = new Date(data.lastUpdate).toLocaleTimeString("th-TH");
+          subStatus.innerText = `อัปเดตล่าสุด: ${timeStr} | คำสั่งล่าสุด: ${data.command || 'idle'}`;
+        }
+      });
+    }
+
+    // 3. Render Door State visually
+    function renderDoorState(state) {
+      switch (state) {
+        case "open":
+          doorShutter.style.height = "10%";
+          statusBadge.innerHTML = `<span style="color:#38bdf8;">🔵 ประตูเปิดสุด (Open)</span>`;
+          break;
+        case "closed":
+          doorShutter.style.height = "100%";
+          statusBadge.innerHTML = `<span style="color:#10b981;">🟢 ประตูปิดสนิท (Closed)</span>`;
+          break;
+        case "opening":
+          doorShutter.style.height = "40%";
+          statusBadge.innerHTML = `<span style="color:#eab308;">🟡 กำลังเปิด... (Opening)</span>`;
+          break;
+        case "closing":
+          doorShutter.style.height = "60%";
+          statusBadge.innerHTML = `<span style="color:#f97316;">🟠 กำลังปิด... (Closing)</span>`;
+          break;
+        case "stopped":
+          doorShutter.style.height = "50%";
+          statusBadge.innerHTML = `<span style="color:#ef4444;">🔴 หยุดชั่วคราว (Stopped)</span>`;
+          break;
+        case "held":
+          doorShutter.style.height = "10%";
+          statusBadge.innerHTML = `<span style="color:#a855f7;">🟣 ค้างเปิด (Hold Open)</span>`;
+          break;
+        default:
+          statusBadge.innerHTML = `<span>⚪ ${state}</span>`;
+      }
+    }
+
+    // 4. Send Command to Firebase
+    function sendCommand(cmd) {
+      if (navigator.vibrate) navigator.vibrate(40);
+      
+      const devRef = db.ref(`devices/${currentDeviceId}`);
+      devRef.update({
+        command: cmd,
+        commandTime: Date.now()
+      });
+
+      // If simulator is active, trigger virtual ESP32 response
+      if (isSimulatorActive) {
+        runVirtualEsp32(cmd);
+      }
+    }
+
+    // 5. Virtual ESP32 Hardware Simulator Logic
+    function runVirtualEsp32(cmd) {
+      clearTimeout(simTimer);
+      const devRef = db.ref(`devices/${currentDeviceId}`);
+
+      if (cmd === "open") {
+        simLog.innerText = "Sim: มอเตอร์หมุนเปิด... (8 วิ)";
+        devRef.update({ status: "opening", lastUpdate: Date.now() });
+
+        simTimer = setTimeout(() => {
+          devRef.update({ status: "open", command: "idle", lastUpdate: Date.now() });
+          simLog.innerText = "Sim: ประตูเปิดสุดแล้ว (Open)";
+        }, 8000);
+
+      } else if (cmd === "close") {
+        simLog.innerText = "Sim: มอเตอร์หมุนปิด... (8 วิ)";
+        devRef.update({ status: "closing", lastUpdate: Date.now() });
+
+        simTimer = setTimeout(() => {
+          devRef.update({ status: "closed", command: "idle", lastUpdate: Date.now() });
+          simLog.innerText = "Sim: ประตูปิดสนิทแล้ว (Closed)";
+        }, 8000);
+
+      } else if (cmd === "stop") {
+        simLog.innerText = "Sim: ส่งสัญญาณหยุดมอเตอร์ (Stop)";
+        devRef.update({ status: "stopped", command: "idle", lastUpdate: Date.now() });
+
+      } else if (cmd === "hold") {
+        simLog.innerText = "Sim: ล็อกค้างเปิด (Hold Open)";
+        devRef.update({ status: "held", command: "idle", lastUpdate: Date.now() });
+      }
+    }
+
+    function toggleSimulator(active) {
+      isSimulatorActive = active;
+      simLog.innerText = active ? "Sim: พร้อมทำงาน" : "Sim: ปิดอยู่ (รอ ESP32 จริง)";
+    }
+
+    function switchDevice(deviceId) {
+      currentDeviceId = deviceId;
+      subscribeToDevice(deviceId);
+    }
+
+    // Initialize
+    subscribeToDevice(currentDeviceId);
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
+
