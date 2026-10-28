@@ -14,7 +14,7 @@ function getTagParamText(t) {
   const holdSec = isRf ? 1 : Math.max(1, Math.round((t.tagHoldMs || TAG_DEF.holdSec * 1000) / 1000));
   const openSec = Math.round((t.tagOpenDurationMs || 0) / 1000);
   const closeDelaySec = Math.round((t.tagCloseDelayMs ?? TAG_DEF.closeDelaySec * 1000) / 1000);
-  const safetyCloseSec = Math.round((t.tagSafetyCloseDelayMs ?? TAG_DEF.safetyCloseDelaySec * 1000) / 1000);
+  const safetyCloseSec = ((t.tagSafetyCloseDelayMs ?? TAG_DEF.safetyCloseDelaySec * 1000) / 1000);
 
   const formatMin = (m) => {
     const h = String(Math.floor(m / 60)).padStart(2, '0');

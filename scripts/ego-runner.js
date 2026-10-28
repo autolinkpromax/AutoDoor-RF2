@@ -9,8 +9,23 @@
  */
 
 import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const EGO_CLI = 'C:\\Program Files\\Citro Labs\\ego lite\\Application\\0.6.0.12\\ego-browser.exe';
+// Automatically detect ego-browser.exe path
+function getEgoCliPath() {
+  const baseDir = 'C:\\Program Files\\Citro Labs\\ego lite\\Application';
+  if (fs.existsSync(baseDir)) {
+    const versions = fs.readdirSync(baseDir).sort().reverse();
+    for (const v of versions) {
+      const exe = path.join(baseDir, v, 'ego-browser.exe');
+      if (fs.existsSync(exe)) return exe;
+    }
+  }
+  return 'C:\\Program Files\\Citro Labs\\ego lite\\Application\\0.6.1.13\\ego-browser.exe';
+}
+
+const EGO_CLI = getEgoCliPath();
 
 export function runEgoScript(jsCode) {
   return new Promise((resolve, reject) => {

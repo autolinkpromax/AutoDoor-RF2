@@ -412,6 +412,9 @@ function onActionClick(e) {
     case 'save-mqtt':
       saveMqtt();
       break;
+    case 'copy-generated-webhook':
+      copyGeneratedWebhookUrl();
+      break;
     case 'copy-hook':
       copyHookUrl(el.dataset.slot);
       break;
@@ -1944,7 +1947,7 @@ function getTagParamText(t) {
   const holdSec = isRf ? 1 : Math.max(1, Math.round((t.tagHoldMs || TAG_DEF.holdSec * 1000) / 1000));
   const openSec = Math.round((t.tagOpenDurationMs || 0) / 1000);
   const closeDelaySec = Math.round((t.tagCloseDelayMs ?? TAG_DEF.closeDelaySec * 1000) / 1000);
-  const safetyCloseSec = Math.round((t.tagSafetyCloseDelayMs ?? TAG_DEF.safetyCloseDelaySec * 1000) / 1000);
+  const safetyCloseSec = ((t.tagSafetyCloseDelayMs ?? TAG_DEF.safetyCloseDelaySec * 1000) / 1000);
 
   const formatMin = (m) => {
     const h = String(Math.floor(m / 60)).padStart(2, '0');
@@ -2202,7 +2205,7 @@ async function openEditor(id) {
     const closeDelaySec = Math.round((t.tagCloseDelayMs ?? TAG_DEF.closeDelaySec * 1000) / 1000);
     if ($('edTagCloseDelaySec')) $('edTagCloseDelaySec').value = closeDelaySec;
 
-    const safetyCloseSec = Math.round((t.tagSafetyCloseDelayMs ?? TAG_DEF.safetyCloseDelaySec * 1000) / 1000);
+    const safetyCloseSec = ((t.tagSafetyCloseDelayMs ?? TAG_DEF.safetyCloseDelaySec * 1000) / 1000);
     if ($('edTagSafetyCloseDelaySec')) $('edTagSafetyCloseDelaySec').value = safetyCloseSec;
     
     if ($('edTagRssiMin')) $('edTagRssiMin').value = t.tagRssiMin ?? TAG_DEF.rssiMin;
@@ -3137,6 +3140,15 @@ async function saveWebAuth() {
 async function loadWebhookUi() {
   try {
     State.webhookCache = await api('/api/webhook');
+    populateWebhookTagDropdown();
+    updateWebhookGeneratorUrl();
+    if (!$('whGenMode')?.dataset?.bound) {
+      $('whGenMode')?.addEventListener('change', updateWebhookGeneratorUrl);
+      $('whGenTagId')?.addEventListener('change', updateWebhookGeneratorUrl);
+      $('whGenFallbackSec')?.addEventListener('input', updateWebhookGeneratorUrl);
+      if ($('whGenMode')) $('whGenMode').dataset.bound = '1';
+    }
+
     const hint = $('hookHostHint');
     if (hint) hint.textContent = 'http://' + (State.webhookCache.host || '—');
 
@@ -3510,6 +3522,66 @@ async function testOutboundWebhook() {
     setHint('whOutMsg', 'hint err', 'เกิดข้อผิดพลาด: ' + e.message);
   }
 }
+
+
+function updateWebhookGeneratorUrl() {
+  if (!State.webhookCache) return;
+  const mode = $('whGenMode')?.value || 'tag_open';
+  const tagId = $('whGenTagId')?.value || '';
+  const fallbackSec = parseInt($('whGenFallbackSec')?.value || 60);
+
+  const tagSec = $('whGenTagSection');
+  const fbSec = $('whGenFallbackSection');
+  if (tagSec) tagSec.style.display = (mode === 'tag_open') ? 'block' : 'none';
+  if (fbSec) fbSec.style.display = (mode === 'tag_open') ? 'block' : 'none';
+
+  const base = 'http://' + (State.webhookCache.host || location.host);
+  const key = State.webhookCache.key || '';
+  let url = '';
+
+  if (mode === 'tag_open') {
+    url = `${base}/hook/door/tag_open?key=${encodeURIComponent(key)}`;
+    if (tagId) {
+      url += `&tag_id=${encodeURIComponent(tagId)}`;
+    }
+    if (fallbackSec && fallbackSec !== 60) {
+      url += `&fallback=${fallbackSec}`;
+    }
+  } else {
+    url = `${base}/hook/door/${mode}?key=${encodeURIComponent(key)}`;
+  }
+
+  const resEl = $('whGenResultUrl');
+  if (resEl) resEl.value = url;
+}
+
+function populateWebhookTagDropdown() {
+  const sel = $('whGenTagId');
+  if (!sel) return;
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">— ทั่วไป (Webhook Tag) —</option>';
+  if (Array.isArray(State.tags)) {
+    for (const t of State.tags) {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      const name = t.name ? `${t.name} (${t.id})` : t.id;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    }
+  }
+  if (currentVal) sel.value = currentVal;
+}
+
+async function copyGeneratedWebhookUrl() {
+  const resEl = $('whGenResultUrl');
+  const url = resEl?.value;
+  if (!url) {
+    setHint('whGenMsg', 'hint err', 'ไม่มี URL ให้คัดลอก');
+    return;
+  }
+  await copyHookText(url, 'คัดลอก Webhook URL แล้ว');
+  setHint('whGenMsg', 'hint ok', 'คัดลอก Webhook URL เรียบร้อย นำไปวางใน Shortcuts/Siri ได้ทันที');
+}
 function toggleSetupWizard() {
   State.setupWizardOpen = !State.setupWizardOpen;
   $('setupBody')?.classList.toggle('collapsed', !State.setupWizardOpen);
@@ -3733,7 +3805,8 @@ async function loadSettingsForm() {
 
   if ($('swSafetySensor')) $('swSafetySensor').checked = !!settings.safetySensorEnabled;
   if ($('safetySensorType')) $('safetySensorType').value = settings.safetySensorType ?? 0;
-  if ($('safetyCloseDelaySec')) $('safetyCloseDelaySec').value = settings.safetyCloseDelayMs != null ? Math.round(settings.safetyCloseDelayMs / 1000) : 3;
+  if ($('safetyDebounceSec')) $('safetyDebounceSec').value = settings.safetyDebounceMs != null ? (settings.safetyDebounceMs / 1000).toFixed(2) : '0.10';
+  if ($('safetyCloseDelaySec')) $('safetyCloseDelaySec').value = settings.safetyCloseDelayMs != null ? (settings.safetyCloseDelayMs / 1000) : 3;
   if ($('safetyReverseDelaySec')) $('safetyReverseDelaySec').value = settings.safetyReverseDelayMs != null ? Math.round(settings.safetyReverseDelayMs / 1000) : 5;
   if ($('swRemotePassageClose')) $('swRemotePassageClose').checked = settings.remotePassageClose !== false;
   if ($('remotePassageDelaySec')) $('remotePassageDelaySec').value = settings.remotePassageDelayMs != null ? Math.round(settings.remotePassageDelayMs / 1000) : 5;
@@ -4293,17 +4366,22 @@ async function toggleRemotePassageClose() {
 }
 
 async function saveSafetyParams() {
-  const closeSec = parseInt($('safetyCloseDelaySec')?.value ?? 3);
+  const debounceSec = parseFloat($('safetyDebounceSec')?.value ?? 0.1);
+  if (isNaN(debounceSec) || debounceSec < 0.05 || debounceSec > 3.0) {
+    setHint('safetyParamsMsg', 'hint err', 'ความไวตรวจจับตัดลำแสง ต้องอยู่ระหว่าง 0.05 ถึง 3.00 วินาที');
+    return;
+  }
+  const closeSec = parseFloat($('safetyCloseDelaySec')?.value ?? 3);
   if (isNaN(closeSec) || closeSec < 0 || closeSec > 60) {
     setHint('safetyParamsMsg', 'hint err', 'หน่วงปิดเมื่อพ้นลำแสง ต้องอยู่ระหว่าง 0 ถึง 60 วินาที');
     return;
   }
-  const revSec = parseInt($('safetyReverseDelaySec')?.value ?? 5);
+  const revSec = parseFloat($('safetyReverseDelaySec')?.value ?? 5);
   if (isNaN(revSec) || revSec < 1 || revSec > 60) {
     setHint('safetyParamsMsg', 'hint err', 'หน่วงปิดเมื่อดีดกลับ ต้องอยู่ระหว่าง 1 ถึง 60 วินาที');
     return;
   }
-  const remoteSec = parseInt($('remotePassageDelaySec')?.value ?? 5);
+  const remoteSec = parseFloat($('remotePassageDelaySec')?.value ?? 5);
   const safeRemoteSec = Math.max(1, Math.min(60, isNaN(remoteSec) ? 5 : remoteSec));
 
   if ($('safetyParamsMsg')) $('safetyParamsMsg').textContent = 'กำลังบันทึก…';
@@ -4311,9 +4389,10 @@ async function saveSafetyParams() {
     await api('/api/settings', {
       method: 'PUT',
       body: {
-        safetyCloseDelayMs: closeSec * 1000,
-        safetyReverseDelayMs: revSec * 1000,
-        remotePassageDelayMs: safeRemoteSec * 1000
+        safetyDebounceMs: Math.round(debounceSec * 1000),
+        safetyCloseDelayMs: Math.round(closeSec * 1000),
+        safetyReverseDelayMs: Math.round(revSec * 1000),
+        remotePassageDelayMs: Math.round(safeRemoteSec * 1000)
       }
     });
     setHint('safetyParamsMsg', 'hint ok', 'บันทึกเวลาการทำงานเซ็นเซอร์สำเร็จ');

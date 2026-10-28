@@ -92,6 +92,7 @@ void ConfigApiController::handleSettingsGet() {
   doc["safetySensorType"] = gSafetySensorType;
   doc["safetyCloseDelayMs"] = gSafetyCloseDelayMs;
   doc["safetyReverseDelayMs"] = gSafetyReverseDelayMs;
+  doc["safetyDebounceMs"] = gSafetyDebounceMs;
   doc["remotePassageClose"] = gRemotePassageClose;
   doc["remotePassageDelayMs"] = gRemotePassageDelayMs;
   doc["doorTransitionMs"] = gDoorTransitionMs;
@@ -193,6 +194,10 @@ void ConfigApiController::handleSettingsPut() {
   if (!body["safetyReverseDelayMs"].isNull()) {
     gSafetyReverseDelayMs = body["safetyReverseDelayMs"].as<uint32_t>();
     gPrefs.putUInt("safeRevDelay", gSafetyReverseDelayMs);
+  }
+  if (!body["safetyDebounceMs"].isNull()) {
+    gSafetyDebounceMs = constrain(body["safetyDebounceMs"].as<uint32_t>(), (uint32_t)kMinSafetyDebounceMs, (uint32_t)kMaxSafetyDebounceMs);
+    gPrefs.putUInt("safeDebounce", gSafetyDebounceMs);
   }
   if (!body["remotePassageClose"].isNull()) {
     gRemotePassageClose = body["remotePassageClose"].as<bool>();

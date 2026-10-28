@@ -15,6 +15,7 @@ private:
   void handleDoorPost();
   void handleEmergencyStop();
   void handleHookDoorSlot(const char* slot);
+  void handleHookDoorTagOpen();
   void handleHookTagAutoToggle();
   bool hookKeyValid();
 };

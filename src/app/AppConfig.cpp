@@ -23,6 +23,7 @@ bool& gSafetySensorEnabled = gAppConfig.safetySensorEnabledRef();
 uint8_t& gSafetySensorType = gAppConfig.safetySensorTypeRef();
 uint32_t& gSafetyCloseDelayMs = gAppConfig.safetyCloseDelayMsRef();
 uint32_t& gSafetyReverseDelayMs = gAppConfig.safetyReverseDelayMsRef();
+uint32_t& gSafetyDebounceMs = gAppConfig.safetyDebounceMsRef();
 
 bool& gRemotePassageClose = gAppConfig.remotePassageCloseRef();
 uint32_t& gRemotePassageDelayMs = gAppConfig.remotePassageDelayMsRef();
@@ -64,6 +65,7 @@ void AppConfig::loadFromPrefs(Preferences& prefs) {
   _safetySensorEnabled = prefs.getBool("safeSensEnabled", false);
   _safetyCloseDelayMs = prefs.getUInt("safeCloseDelay", 3000);
   _safetyReverseDelayMs = prefs.getUInt("safeRevDelay", 5000);
+  _safetyDebounceMs = prefs.getUInt("safeDebounce", kDefaultSafetyDebounceMs);
   _remotePassageClose = prefs.getBool("remPassClose", false);
   _remotePassageDelayMs = prefs.getUInt("remPassDelay", 5000);
   _doorTransitionMs = prefs.getUInt("doorTransMs", 5000);
@@ -95,6 +97,7 @@ void AppConfig::saveToPrefs(Preferences& prefs) {
   prefs.putUChar("safeSensType", _safetySensorType);
   prefs.putUInt("safeCloseDelay", _safetyCloseDelayMs);
   prefs.putUInt("safeRevDelay", _safetyReverseDelayMs);
+  prefs.putUInt("safeDebounce", _safetyDebounceMs);
   prefs.putBool("remPassClose", _remotePassageClose);
   prefs.putUInt("remPassDelay", _remotePassageDelayMs);
   prefs.putUInt("doorTransMs", _doorTransitionMs);

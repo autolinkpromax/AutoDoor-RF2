@@ -102,6 +102,9 @@ function onActionClick(e) {
     case 'save-mqtt':
       saveMqtt();
       break;
+    case 'copy-generated-webhook':
+      copyGeneratedWebhookUrl();
+      break;
     case 'copy-hook':
       copyHookUrl(el.dataset.slot);
       break;

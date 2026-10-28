@@ -457,6 +457,7 @@ void SystemApiController::handleWebhookGet() {
   doc["blynkToken"] = blynkToken;
   JsonObject hooks = doc["hooks"].to<JsonObject>();
   hooks["open"] = base + "/hook/door/open?key=" + gHookKey;
+  hooks["tagOpen"] = base + "/hook/door/tag_open?key=" + gHookKey;
   hooks["stop"] = base + "/hook/door/stop?key=" + gHookKey;
   hooks["close"] = base + "/hook/door/close?key=" + gHookKey;
   hooks["tagAutoToggle"] = base + "/hook/tag-auto/toggle?key=" + gHookKey;

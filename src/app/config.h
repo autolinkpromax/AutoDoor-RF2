@@ -60,8 +60,27 @@ constexpr uint8_t kEspNowChannel = 9;
 constexpr float kWifiTxPowerDbm = 17.0f;  // 17.0 dBm (68) — ลดจาก 19.5 เพื่อลด peak current ~30-50 mA ป้องกัน brownout reset
 constexpr int8_t kWifiTxPower = static_cast<int8_t>(kWifiTxPowerDbm * 4.0f + 0.5f);
 
+// ── Staged Boot / Power Safety (v1.0.4) ──────────────────────────────────────
+// กำลังส่งตอนบูต (SoftAP only) — ต่ำสุดที่ chip รองรับ เพื่อลด peak current ตอน PSU ยังไม่นิ่ง
+// จะคืนค่าเป็น kWifiTxPowerDbm เมื่อ STA connected (+1s) / timeout / Safe Mode / ESP-NOW init
+constexpr float kWifiBootTxPowerDbm = 10.0f;
+constexpr int8_t kWifiBootTxPower = static_cast<int8_t>(kWifiBootTxPowerDbm * 4.0f + 0.5f);
+constexpr uint32_t kStagedPowerRestoreTimeoutMs = 20000;  // STA ไม่ติดภายใน 20s -> คืนกำลังส่งปกติ (กันสัญญาณอ่อนจน associate ไม่ได้)
+constexpr uint32_t kStagedPowerRestoreNoStaMs = 3000;     // ไม่ได้ตั้ง Wi-Fi บ้าน -> คืนกำลังส่งหลัง 3s
 
-constexpr const char* kFirmwareVersion = "1.0.3";
+// ESP-NOW เริ่มหลัง STA connected เพื่อไม่ให้ peak ซ้อนกับ STA association
+constexpr uint32_t kStagedEspNowAfterStaMs = 1000;     // STA up แล้ว +1s -> init ESP-NOW
+constexpr uint32_t kStagedEspNowFallbackMs = 15000;    // STA ไม่ติด (router บูตช้า) -> init ESP-NOW ที่ 15s อยู่ดี (Tag ต้องใช้งานได้)
+constexpr uint32_t kStagedEspNowNoStaMs = 2000;        // ไม่ได้ตั้ง Wi-Fi บ้าน -> init ESP-NOW ที่ 2s
+constexpr uint32_t kStagedFirstAnnounceDelayMs = 200;  // หน่วง announce แรกหลัง init ESP-NOW
+
+// Cloud services ทยอยเชื่อมต่อหลัง STA up (นับจากเวลาที่ STA connected)
+constexpr uint32_t kStagedBlynkDelayMs = 3000;
+constexpr uint32_t kStagedMqttDelayMs = 5000;
+constexpr uint32_t kStagedNtpDelayMs = 8000;
+
+
+constexpr const char* kFirmwareVersion = "1.0.6";
 constexpr const char* kFirmwareBuildDate = __DATE__ " " __TIME__;
 
 constexpr uint32_t kDefaultRelayPulseMs = 300;
@@ -91,6 +110,9 @@ constexpr uint32_t kDefaultTagPassCloseDelayMs = 5000;
 constexpr uint32_t kDefaultTagSafetyCloseDelayMs = 3000;
 constexpr uint32_t kStandardTagSafetyCloseDelayMs = 3000;
 constexpr uint32_t kDefaultSafetyReverseDelayMs = 5000;
+constexpr uint32_t kDefaultSafetyDebounceMs = 100;     // 0.10s default debounce filter for optical beam
+constexpr uint32_t kMinSafetyDebounceMs = 50;          // 0.05s min
+constexpr uint32_t kMaxSafetyDebounceMs = 3000;        // 3.00s max
 
 #if defined(AUTODOOR_VERBOSE_LOG) && AUTODOOR_VERBOSE_LOG
 #define AD_LOG(stmt) \

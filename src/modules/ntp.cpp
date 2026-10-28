@@ -1,6 +1,8 @@
 #include "ntp.h"
 
 #include "app/globals.h"
+#include "app/config.h"
+#include "modules/wifi_manager.h"
 
 #include <WiFi.h>
 #include <time.h>
@@ -61,6 +63,10 @@ void stepNtpAuto() {
   lastLoopCheckMs = now;
 
   if (WiFi.status() != WL_CONNECTED) {
+    return;
+  }
+  // Staged boot: NTP is last in the cloud stagger (Blynk +3s, MQTT +5s, NTP +8s after STA up)
+  if (wifiStaUpMs() < kStagedNtpDelayMs) {
     return;
   }
   ensureNtpConfigured();

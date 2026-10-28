@@ -193,9 +193,18 @@
               <div id="safetyDelaySection" class="hidden" style="margin-top:12px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.02); border:1px solid var(--line);">
                 <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
                   <div style="flex:1; min-width:140px;">
+                    <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">ความไวตรวจจับตัดลำแสง</label>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                      <input id="safetyDebounceSec" type="number" min="0.05" max="3.00" step="0.05" placeholder="0.10" style="width:100%; box-sizing:border-box;" />
+                      <span class="muted" style="font-size:12px; white-space:nowrap;">วิ</span>
+                    </div>
+                    <span class="muted" style="font-size:11px;">(เริ่มต้น 0.10 วิ, สูงสุด 3 วิ, จับจักรยานไว)</span>
+                  </div>
+
+                  <div style="flex:1; min-width:140px;">
                     <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">หน่วงปิดเมื่อพ้นลำแสง</label>
                     <div style="display:flex; gap:6px; align-items:center;">
-                      <input id="safetyCloseDelaySec" type="number" min="0" max="60" step="1" placeholder="3" style="width:100%; box-sizing:border-box;" />
+                      <input id="safetyCloseDelaySec" type="number" min="0" max="60" step="0.1" placeholder="3.0" style="width:100%; box-sizing:border-box;" />
                       <span class="muted" style="font-size:12px; white-space:nowrap;">วิ</span>
                     </div>
                     <span class="muted" style="font-size:11px;">(ปกติ 3 วิ, 0 = ปิดทันที)</span>
@@ -204,7 +213,7 @@
                   <div style="flex:1; min-width:140px;">
                     <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">หน่วงปิดเมื่อดีดกลับฉุกเฉิน</label>
                     <div style="display:flex; gap:6px; align-items:center;">
-                      <input id="safetyReverseDelaySec" type="number" min="1" max="60" step="1" placeholder="5" style="width:100%; box-sizing:border-box;" />
+                      <input id="safetyReverseDelaySec" type="number" min="1" max="60" step="0.1" placeholder="5.0" style="width:100%; box-sizing:border-box;" />
                       <span class="muted" style="font-size:12px; white-space:nowrap;">วิ</span>
                     </div>
                     <span class="muted" style="font-size:11px;">(เปิดออกแล้วรอก่อนปิด)</span>
@@ -569,6 +578,54 @@
           </button>
           <div id="cardWebhookBody" class="setupBody collapsed">
             <div class="muted mono" id="hookHostHint" style="margin-bottom:10px;font-size:13px">—</div>
+            <!-- Webhook URL Generator (เปิดแบบ Tag / ระบุตัวตน) -->
+            <div class="hookSec" style="background:rgba(56,189,248,0.03); border:1px solid rgba(56,189,248,0.18); border-radius:10px; padding:12px; margin-bottom:14px;">
+              <b style="color:#38bdf8; display:flex; align-items:center; gap:6px;">
+                <span>⚡</span> เครื่องมือสร้างลิงก์ Webhook (สั่งเปิดแบบ Tag / ระบุตัวตน)
+              </b>
+              <div class="muted" style="margin:4px 0 10px; font-size:12px; line-height:1.4;">
+                สร้างลิงก์สำหรับสั่งเปิดประตูจากระยะไกล เมื่อขับผ่านเซ็นเซอร์ ประตูจะปิดตามหลังอัตโนมัติ (ไม่ติดโหมดค้างมือ)
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <div style="flex:1; min-width:140px;">
+                    <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">โหมดคำสั่ง</label>
+                    <select id="whGenMode" style="width:100%; box-sizing:border-box;">
+                      <option value="tag_open" selected>เปิดแบบ Tag (ปิดอัตโนมัติเมื่อพ้นเซ็นเซอร์)</option>
+                      <option value="open">เปิดปกติ (Manual Hold)</option>
+                      <option value="close">ปิดประตู (Close)</option>
+                      <option value="stop">หยุดประตู (Stop)</option>
+                    </select>
+                  </div>
+
+                  <div id="whGenTagSection" style="flex:1; min-width:140px;">
+                    <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">ระบุชื่อ Tag ที่เปิด</label>
+                    <select id="whGenTagId" style="width:100%; box-sizing:border-box;">
+                      <option value="">— ทั่วไป (Webhook Tag) —</option>
+                    </select>
+                  </div>
+
+                  <div id="whGenFallbackSection" style="flex:1; min-width:120px;">
+                    <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">ปิดเองหากไม่ผ่าน (Fallback)</label>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                      <input id="whGenFallbackSec" type="number" min="10" max="3600" step="5" value="60" style="width:100%; box-sizing:border-box;" />
+                      <span class="muted" style="font-size:12px;">วิ</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">URL ที่สร้างได้ (พร้อมคัดลอก)</label>
+                  <div style="display:flex; gap:8px; align-items:center;">
+                    <input id="whGenResultUrl" type="text" readonly style="width:100%; font-family:monospace; font-size:11px; background:rgba(0,0,0,0.2);" />
+                    <button type="button" class="btnPri" style="white-space:nowrap; padding:6px 14px;" data-action="copy-generated-webhook">คัดลอก URL</button>
+                  </div>
+                </div>
+              </div>
+              <div class="hint" id="whGenMsg"></div>
+            </div>
+
             <div class="hookSec">
               <b>ลิงก์สั่งงานผ่านเครือข่ายในบ้าน (LAN)</b>
               <div class="muted" style="margin-bottom:8px;font-size:12px">กดคัดลอกลิงก์เพื่อนำไปสั่งเปิด-ปิดประตูผ่านเครือข่ายในบ้าน</div>

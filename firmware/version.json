@@ -1,7 +1,7 @@
 {
-  "version": "1.0.3",
-  "releaseDate": "2026-10-27 06:46:51 UTC",
+  "version": "1.0.6",
+  "releaseDate": "2026-10-28 04:16:12 UTC",
   "targetChip": "ESP32-C3",
   "file": "firmware_autodoor_ota.bin",
-  "changelog": "V1.0.3: แก้ไขปัญหาไฟตก ปรับ Staged Boot และลด Peak Current Wi-Fi เพื่อความเสถียร"
+  "changelog": "v1.0.6: Webhook เปิดแบบ Tag (/hook/door/tag_open), ปรับความไวเซ็นเซอร์กันหนีบสำหรับจักรยาน, รองรับทศนิยมวินาที"
 }

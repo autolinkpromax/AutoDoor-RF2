@@ -97,6 +97,10 @@ public:
   void setSafetyReverseDelayMs(uint32_t val) { _safetyReverseDelayMs = val; }
   uint32_t& safetyReverseDelayMsRef() { return _safetyReverseDelayMs; }
 
+  uint32_t safetyDebounceMs() const { return _safetyDebounceMs; }
+  void setSafetyDebounceMs(uint32_t val) { _safetyDebounceMs = val; }
+  uint32_t& safetyDebounceMsRef() { return _safetyDebounceMs; }
+
   // ── Passage Close ──
   bool isRemotePassageClose() const { return _remotePassageClose; }
   void setRemotePassageClose(bool val) { _remotePassageClose = val; }
@@ -161,6 +165,7 @@ private:
   uint8_t _safetySensorType{0};
   uint32_t _safetyCloseDelayMs{3000};
   uint32_t _safetyReverseDelayMs{5000};
+  uint32_t _safetyDebounceMs{kDefaultSafetyDebounceMs};
 
   bool _remotePassageClose{false};
   uint32_t _remotePassageDelayMs{5000};

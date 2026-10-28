@@ -65,6 +65,8 @@ uint32_t sLastTimeMs = 0;
 static uint32_t sDoorOpenStartMs = 0;
 static uint32_t sLastOpenWarnSentMin = 0;
 static String sActiveDoorTagId = "";
+// Tracks last HTTP dispatch time for inter-dispatch gap enforcement
+static uint32_t sLastDispatchMs = 0;
 
 void formatDiscordPayload(const WebhookItem& item, String& out) {
   JsonDocument doc;
@@ -147,11 +149,11 @@ void outboundWebhookTask(void* param) {
         continue;
       }
 
-      // Fast rate limit: ensure small gap (200ms) between consecutive HTTP calls so lwIP sockets recycle cleanly
-      static uint32_t sLastDispatchMs = 0;
+      // Inter-dispatch gap: 50ms minimum between consecutive HTTP calls so lwIP sockets recycle cleanly.
+      // First item in a burst fires immediately (sLastDispatchMs == 0 or gap >= 50ms).
       uint32_t now = millis();
-      if (sLastDispatchMs != 0 && (now - sLastDispatchMs < 200)) {
-        vTaskDelay(pdMS_TO_TICKS(200 - (now - sLastDispatchMs)));
+      if (sLastDispatchMs != 0 && (now - sLastDispatchMs < 50)) {
+        vTaskDelay(pdMS_TO_TICKS(50 - (now - sLastDispatchMs)));
       }
       sLastDispatchMs = millis();
 
@@ -353,11 +355,13 @@ void initOutboundWebhook() {
   loadOutboundWebhookConfig();
 
   if (!sQueue) {
-    sQueue = xQueueCreate(4, sizeof(WebhookItem));
+    // Queue depth 8: handles bursts (tag_open + closing + close + open_warn) without dropping events
+    sQueue = xQueueCreate(8, sizeof(WebhookItem));
   }
 
   if (!sTaskHandle) {
-    xTaskCreate(outboundWebhookTask, "whOutTask", 5120, NULL, 1, &sTaskHandle);
+    // Priority 2: above idle/background tasks so HTTP dispatches fire promptly
+    xTaskCreate(outboundWebhookTask, "whOutTask", 5120, NULL, 2, &sTaskHandle);
   }
 
   gDoorController.addListener(&sDoorListener);

@@ -21,6 +21,12 @@ constexpr uint32_t kAnnounceIntervalMs = 250;      // Fast interval when tag is 
 constexpr uint32_t kAnnounceIntervalIdleMs = 500;  // Idle interval — 500ms ให้ tag ที่ dwell 60ms/ch มีโอกาสได้ยิน announce ก่อน hop
 constexpr uint32_t kChannelFixIntervalMs = 2000;
 
+// Staged boot state: ESP-NOW init is deferred until STA is up (or fallback timeout)
+bool sEspNowBootPending = false;
+uint32_t sEspNowBootStartMs = 0;
+bool sAnnounceHold = false;            // hold back first announce after init (peak current spacing)
+uint32_t sAnnounceNotBeforeMs = 0;
+
 bool isValidBeacon(const uint8_t* data, int len, TagBeacon* out) {
   if (len < (int)sizeof(TagBeacon)) return false;
   memcpy(out, data, sizeof(TagBeacon));
@@ -222,6 +228,9 @@ void initEspNow() {
   esp_now_register_recv_cb(onEspNowRecv);
   esp_now_register_send_cb(onEspNowSend);
   gEspNowReady = true;
+  sEspNowBootPending = false;
+  sAnnounceHold = true;
+  sAnnounceNotBeforeMs = millis() + kStagedFirstAnnounceDelayMs;
   ensureEspNowChannel();
   addBroadcastPeer();
   syncEspNowPeers();
@@ -317,6 +326,10 @@ void stepReceiverAnnounce() {
   if (WiFi.scanComplete() == WIFI_SCAN_RUNNING) return; // Bypass during active WiFi scans
   if (!gEspNowReady) return;
   const uint32_t now = millis();
+  if (sAnnounceHold) {
+    if ((int32_t)(now - sAnnounceNotBeforeMs) < 0) return;
+    sAnnounceHold = false;
+  }
   const bool immediate = sPendingImmediateAnnounce;
   // Use fast interval when any tag was recently active, slow interval when idle
   const uint32_t baseInterval = gPrevAnyTagActive ? kAnnounceIntervalMs : kAnnounceIntervalIdleMs;
@@ -377,6 +390,8 @@ void checkEspNowReceiverHealth() {
   // and the scan is no longer running, recover/resume it in the background
   // only after a 15-second timeout has elapsed since the scan started.
   if (!gEspNowReady) {
+    // Boot-time init is owned by stepDeferredEspNowBoot() (STA-up / fallback timeout)
+    if (sEspNowBootPending) return;
     if ((uint32_t)(millis() - gWifiScanStartMs) >= 15000) {
       if (scanState >= 0) {
         Serial.printf("[wifi] Background scan cleanup: found %d networks\n", scanState);
@@ -395,6 +410,46 @@ void checkEspNowReceiverHealth() {
 
   // 2. Verify that the broadcast peer exists and has the correct channel configuration
   addBroadcastPeer();
+}
+
+// ── Staged boot: deferred ESP-NOW init ───────────────────────────────────────
+// ESP-NOW init is deferred out of setup() so its peak current does not stack on SoftAP bring-up
+// or STA association. Init fires when STA has been up for kStagedEspNowAfterStaMs, or on a hard
+// fallback timeout (router slow to boot after power loss -> tags must still work).
+void deferEspNowBoot() {
+  sEspNowBootPending = true;
+  sEspNowBootStartMs = millis();
+  Serial.println("[espnow] init deferred until STA up (fallback timeout armed)");
+}
+
+bool isEspNowBootPending() {
+  return sEspNowBootPending;
+}
+
+void stepDeferredEspNowBoot() {
+  if (!sEspNowBootPending) return;
+  if (gSafeMode) {
+    // Safe Mode keeps ESP-NOW off; leaving Safe Mode calls resumeEspNow() -> initEspNow()
+    sEspNowBootPending = false;
+    return;
+  }
+  if (gEspNowDisabled) return;
+  if (WiFi.scanComplete() == WIFI_SCAN_RUNNING) return;
+
+  const uint32_t now = millis();
+  const uint32_t elapsedMs = (uint32_t)(now - sEspNowBootStartMs);
+  const bool hasSta = wifiStaConfigured();
+  const bool staReady = hasSta && wifiStaUpMs() >= kStagedEspNowAfterStaMs;
+  const bool timedOut = elapsedMs >= (hasSta ? kStagedEspNowFallbackMs : kStagedEspNowNoStaMs);
+  if (!staReady && !timedOut) return;
+
+  static uint32_t lastAttemptMs = 0;
+  if (lastAttemptMs != 0 && (uint32_t)(now - lastAttemptMs) < 1000) return;  // throttle retries on init failure
+  lastAttemptMs = now ? now : 1;
+
+  Serial.printf("[espnow] deferred init now (%s, t=%lums since boot-defer)\n",
+                staReady ? "STA up" : "fallback timeout", (unsigned long)elapsedMs);
+  initEspNow();
 }
 
 bool isEspNowReady() {

@@ -1,6 +1,15 @@
 async function loadWebhookUi() {
   try {
     State.webhookCache = await api('/api/webhook');
+    populateWebhookTagDropdown();
+    updateWebhookGeneratorUrl();
+    if (!$('whGenMode')?.dataset?.bound) {
+      $('whGenMode')?.addEventListener('change', updateWebhookGeneratorUrl);
+      $('whGenTagId')?.addEventListener('change', updateWebhookGeneratorUrl);
+      $('whGenFallbackSec')?.addEventListener('input', updateWebhookGeneratorUrl);
+      if ($('whGenMode')) $('whGenMode').dataset.bound = '1';
+    }
+
     const hint = $('hookHostHint');
     if (hint) hint.textContent = 'http://' + (State.webhookCache.host || '—');
 
@@ -373,4 +382,64 @@ async function testOutboundWebhook() {
   } catch (e) {
     setHint('whOutMsg', 'hint err', 'เกิดข้อผิดพลาด: ' + e.message);
   }
+}
+
+
+function updateWebhookGeneratorUrl() {
+  if (!State.webhookCache) return;
+  const mode = $('whGenMode')?.value || 'tag_open';
+  const tagId = $('whGenTagId')?.value || '';
+  const fallbackSec = parseInt($('whGenFallbackSec')?.value || 60);
+
+  const tagSec = $('whGenTagSection');
+  const fbSec = $('whGenFallbackSection');
+  if (tagSec) tagSec.style.display = (mode === 'tag_open') ? 'block' : 'none';
+  if (fbSec) fbSec.style.display = (mode === 'tag_open') ? 'block' : 'none';
+
+  const base = 'http://' + (State.webhookCache.host || location.host);
+  const key = State.webhookCache.key || '';
+  let url = '';
+
+  if (mode === 'tag_open') {
+    url = `${base}/hook/door/tag_open?key=${encodeURIComponent(key)}`;
+    if (tagId) {
+      url += `&tag_id=${encodeURIComponent(tagId)}`;
+    }
+    if (fallbackSec && fallbackSec !== 60) {
+      url += `&fallback=${fallbackSec}`;
+    }
+  } else {
+    url = `${base}/hook/door/${mode}?key=${encodeURIComponent(key)}`;
+  }
+
+  const resEl = $('whGenResultUrl');
+  if (resEl) resEl.value = url;
+}
+
+function populateWebhookTagDropdown() {
+  const sel = $('whGenTagId');
+  if (!sel) return;
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">— ทั่วไป (Webhook Tag) —</option>';
+  if (Array.isArray(State.tags)) {
+    for (const t of State.tags) {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      const name = t.name ? `${t.name} (${t.id})` : t.id;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    }
+  }
+  if (currentVal) sel.value = currentVal;
+}
+
+async function copyGeneratedWebhookUrl() {
+  const resEl = $('whGenResultUrl');
+  const url = resEl?.value;
+  if (!url) {
+    setHint('whGenMsg', 'hint err', 'ไม่มี URL ให้คัดลอก');
+    return;
+  }
+  await copyHookText(url, 'คัดลอก Webhook URL แล้ว');
+  setHint('whGenMsg', 'hint ok', 'คัดลอก Webhook URL เรียบร้อย นำไปวางใน Shortcuts/Siri ได้ทันที');
 }

@@ -351,7 +351,10 @@ void invalidateApSettingsCache() {
 
 void stepWiFiReconnect() {
   if (gEspNowDisabled) return;
-  if (!isEspNowReady()) return; // Bypass if ESP-NOW is suspended (e.g. during/after WiFi scan)
+  // Staged boot: ESP-NOW init is deferred until AFTER STA connects, so STA reconnect must run
+  // while ESP-NOW is still pending. Otherwise (suspended for a scan) keep the old bypass.
+  if (WiFi.scanComplete() == WIFI_SCAN_RUNNING) return;
+  if (!isEspNowReady() && !isEspNowBootPending()) return;
   
   const uint32_t now = millis();
   static uint32_t lastCheckMs = 0;
@@ -391,8 +394,47 @@ void stepWiFiReconnect() {
   gStaReconnectBackoffMs = min(gStaReconnectBackoffMs * 2, kStaReconnectBackoffMaxMs);
 }
 
+static bool sBootTxPowerLow = false;
+
 void applyWifiTxPower() {
+  sBootTxPowerLow = false;
   WiFi.setTxPower(static_cast<wifi_power_t>(kWifiTxPower));
+}
+
+// Reduced TX power during the first seconds after boot (SoftAP-only phase) to limit peak current.
+// Value comes from kWifiBootTxPowerDbm in config.h; restored by stepWifiBootPowerRestore().
+void applyWifiBootTxPower() {
+  sBootTxPowerLow = true;
+  WiFi.setTxPower(static_cast<wifi_power_t>(kWifiBootTxPower));
+}
+
+bool wifiStaConfigured() {
+  return !getCachedStaSsid().isEmpty();
+}
+
+// Milliseconds since STA obtained a connection (0 while disconnected). Lazily tracked: must be
+// polled regularly (stepStagedBoot() does this every loop).
+uint32_t wifiStaUpMs() {
+  static uint32_t sUpSinceMs = 0;
+  if (WiFi.status() != WL_CONNECTED) {
+    sUpSinceMs = 0;
+    return 0;
+  }
+  const uint32_t now = millis();
+  if (sUpSinceMs == 0) sUpSinceMs = now ? now : 1;
+  return (uint32_t)(now - sUpSinceMs);
+}
+
+void stepWifiBootPowerRestore() {
+  if (!sBootTxPowerLow) return;
+  const uint32_t sinceBootMs = (uint32_t)(millis() - gBootMs);
+  const bool staUp = wifiStaUpMs() >= kStagedEspNowAfterStaMs;
+  const uint32_t timeoutMs = wifiStaConfigured() ? kStagedPowerRestoreTimeoutMs : kStagedPowerRestoreNoStaMs;
+  if (staUp || gSafeMode || sinceBootMs >= timeoutMs) {
+    applyWifiTxPower();
+    Serial.printf("[power] TX power restored to %.1f dBm (%s, t=%lums)\n", (double)kWifiTxPowerDbm,
+                  staUp ? "STA up" : (gSafeMode ? "safe mode" : "timeout"), (unsigned long)sinceBootMs);
+  }
 }
 
 String sanitizeHostname(String name) {
@@ -476,7 +518,7 @@ void setupWifiApStaPhased() {
   WiFi.setAutoReconnect(false);
   WiFi.mode(WIFI_AP_STA);
   WiFi.setSleep(false);
-  applyWifiTxPower();  // ใช้ kWifiTxPowerDbm จาก config.h (17.0 dBm)
+  applyWifiBootTxPower();  // Boot TX power ต่ำ (kWifiBootTxPowerDbm) — คืนเป็น kWifiTxPowerDbm โดย stepWifiBootPowerRestore()
 
   const String host = resolveHostname();
   WiFi.setHostname(host.c_str());

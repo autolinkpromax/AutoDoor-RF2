@@ -1,6 +1,8 @@
 #include "blynk_service.h"
 
 #include "app/globals.h"
+#include "app/config.h"
+#include "modules/wifi_manager.h"
 #include "modules/door.h"
 #include "hal/MotorActuator.h"
 #include "diagnostics/DiagEventLogger.h"
@@ -47,6 +49,9 @@ void stepBlynk() {
     gBlynkConfigured = false;
     return;
   }
+
+  // Staged boot: let STA settle before opening the Blynk TCP connection (peak current spacing)
+  if (wifiStaUpMs() < kStagedBlynkDelayMs) return;
 
   const uint32_t now = millis();
 

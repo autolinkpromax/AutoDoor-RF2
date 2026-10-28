@@ -37,12 +37,13 @@ SafetyBeamEvent SafetyBeamMonitor::update(uint32_t now, bool isClosing) {
     gSafetySensorBlocked = rawBlocked;
   }
 
-  // Dynamic asymmetric debounce:
-  // When closing (or reversing to close): 80ms to reject motor inrush / vibration noise spikes.
-  // When stationary/opening: 20ms for fast emergency stop response.
-  // Beam clear (obstacle leaving): 80ms (stable clear).
-  const uint32_t breakDebounceMs = isClosing ? 80 : 20;
-  const uint32_t debounceThresholdMs = rawBlocked ? breakDebounceMs : 80;
+  // Configurable Debounce Filter:
+  // Beam break: gSafetyDebounceMs (when closing: minimum 80ms to prevent motor inrush noise)
+  // Beam clear: min(gSafetyDebounceMs, 80ms) for prompt clearance detection
+  const uint32_t effectiveDebounceMs = (gSafetyDebounceMs > 0) ? gSafetyDebounceMs : kDefaultSafetyDebounceMs;
+  const uint32_t breakDebounceMs = isClosing ? (effectiveDebounceMs < 80 ? 80 : effectiveDebounceMs) : effectiveDebounceMs;
+  const uint32_t clearDebounceMs = (effectiveDebounceMs < 80) ? effectiveDebounceMs : 80;
+  const uint32_t debounceThresholdMs = rawBlocked ? breakDebounceMs : clearDebounceMs;
 
   if (rawBlocked != _lastRaw) {
     _lastRaw = rawBlocked;

@@ -115,7 +115,7 @@ async function openEditor(id) {
     const closeDelaySec = Math.round((t.tagCloseDelayMs ?? TAG_DEF.closeDelaySec * 1000) / 1000);
     if ($('edTagCloseDelaySec')) $('edTagCloseDelaySec').value = closeDelaySec;
 
-    const safetyCloseSec = Math.round((t.tagSafetyCloseDelayMs ?? TAG_DEF.safetyCloseDelaySec * 1000) / 1000);
+    const safetyCloseSec = ((t.tagSafetyCloseDelayMs ?? TAG_DEF.safetyCloseDelaySec * 1000) / 1000);
     if ($('edTagSafetyCloseDelaySec')) $('edTagSafetyCloseDelaySec').value = safetyCloseSec;
     
     if ($('edTagRssiMin')) $('edTagRssiMin').value = t.tagRssiMin ?? TAG_DEF.rssiMin;

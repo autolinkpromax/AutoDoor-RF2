@@ -18,6 +18,10 @@ void DoorApiController::registerRoutes() {
     wrap([this]() { handleHookDoorSlot("open"); }, true);
   });
 
+  _server.on("/hook/door/tag_open", HTTP_GET, [this]() {
+    wrap([this]() { handleHookDoorTagOpen(); }, true);
+  });
+
   _server.on("/hook/door/stop", HTTP_GET, [this]() {
     wrap([this]() { handleHookDoorSlot("stop"); }, true);
   });
@@ -87,6 +91,82 @@ void DoorApiController::handleHookDoorSlot(const char* slot) {
   JsonDocument doc;
   doc["ok"] = ok;
   doc["doorState"] = doorStateToString(gDoorState);
+  sendJson(ok ? 200 : 409, doc);
+}
+
+void DoorApiController::handleHookDoorTagOpen() {
+  if (!hookKeyValid()) {
+    JsonDocument doc;
+    doc["ok"] = false;
+    doc["error"] = "invalid_key";
+    sendJson(403, doc);
+    return;
+  }
+
+  // Identify tag if specified
+  String tagId = _server.hasArg("tag_id") ? _server.arg("tag_id") : (_server.hasArg("tag") ? _server.arg("tag") : "");
+  String tagLabel = "Webhook";
+  uint32_t tagCloseDelay = 60000; // 60s fallback auto-close
+  uint32_t tagSafetyDelay = gSafetyCloseDelayMs;
+  uint32_t tagOpenDuration = 0;
+
+  if (!tagId.isEmpty()) {
+    TagStoreLock lock;
+    Tag* t = gTagRegistry.findById(tagId);
+    if (t) {
+      if (!t->name.isEmpty()) tagLabel = t->name;
+      else tagLabel = t->id;
+      if (t->tagCloseDelayMs > 0) tagCloseDelay = t->tagCloseDelayMs;
+      if (t->tagSafetyCloseDelayMs > 0) tagSafetyDelay = t->tagSafetyCloseDelayMs;
+      tagOpenDuration = t->tagOpenDurationMs;
+    }
+  }
+
+  // Fallback auto-close delay override if supplied
+  if (_server.hasArg("fallback")) {
+    uint32_t fSec = _server.arg("fallback").toInt();
+    if (fSec > 0 && fSec <= 3600) {
+      tagCloseDelay = fSec * 1000;
+    }
+  } else if (_server.hasArg("delay")) {
+    uint32_t dSec = _server.arg("delay").toInt();
+    if (dSec > 0 && dSec <= 3600) {
+      tagCloseDelay = dSec * 1000;
+    }
+  }
+
+  gActiveTriggerTagId = tagId.isEmpty() ? "WEBHOOK" : tagId;
+  gPrevActiveDelayMaxMs = tagCloseDelay;
+  gPrevActiveSafetyDelayMs = tagSafetyDelay;
+  gDoorController.tagOpenDurationMsRef() = tagOpenDuration;
+
+  bool ok = false;
+  uint32_t now = millis();
+
+  if (gDoorState == DoorState::Open) {
+    // Already open: refresh fallback auto-close timer and tag session without redundant relay pulse
+    gDoorController.isManualOpenStateRef() = false;
+    gDoorController.safetySensor().clearPassage();
+    gDoorController.autoCloseEngine().armPendingClose(now + tagCloseDelay);
+    ok = true;
+  } else {
+    // Closed, Closing, or Stopped: request Open with manualHold = false (Tag Auto Mode)
+    ok = requestDoorSlot("open", false /* manualCommand = false */, false /* manualHold = false */, gActiveTriggerTagId.c_str());
+  }
+
+  if (ok) {
+    logDiagEvent(DoorEventCode::TagOpen, DoorEventLevel::Success, DiagReasonCode::SrcWebhook, 0, 0, tagLabel.c_str());
+    Serial.printf("[webhook] tag_open triggered (tag='%s', fallback=%lu ms, safetyDelay=%lu ms)\n",
+                  tagLabel.c_str(), (unsigned long)tagCloseDelay, (unsigned long)tagSafetyDelay);
+  }
+
+  JsonDocument doc;
+  doc["ok"] = ok;
+  doc["mode"] = "tag_open";
+  doc["doorState"] = doorStateToString(gDoorState);
+  doc["tagId"] = gActiveTriggerTagId;
+  doc["tagName"] = tagLabel;
+  doc["fallbackSec"] = tagCloseDelay / 1000;
   sendJson(ok ? 200 : 409, doc);
 }
 

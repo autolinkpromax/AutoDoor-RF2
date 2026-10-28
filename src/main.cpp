@@ -93,27 +93,26 @@ void setup() {
   gSystemBootReady = true;
   Serial.println("[boot] Core ready: door ground truth confirmed, RF433 receiver active");
 
-  // ─── PHASE 1: WiFi Radio (SoftAP only, STA deferred) ───────────────────────
-  // SoftAP เปิดก่อน TX Power 17dBm — ยังไม่ WiFi.begin() STA ทันที
+  // ─── PHASE 1: WiFi Radio (SoftAP only @ boot TX power, STA deferred) ────────
+  // SoftAP เปิดก่อนด้วย TX Power ต่ำ (kWifiBootTxPowerDbm) — ยังไม่ WiFi.begin() STA ทันที
   // STA connect จะเกิดใน stepWiFiReconnect() loop หลัง ~5 วินาที เมื่อ PSU เสถียรแล้ว
-  Serial.println("[boot] Phase 1: WiFi SoftAP init (STA connect deferred)...");
+  Serial.println("[boot] Phase 1: WiFi SoftAP init (boot TX power, STA connect deferred)...");
   setupWifiApStaPhased();
 
-  // ─── PHASE 2: ESP-NOW Init (ห่าง 400ms หลัง SoftAP) ────────────────────────
-  // รอให้ WiFi radio settle ก่อน init ESP-NOW เพื่อป้องกัน peak current ซ้อนกัน
-  delay(400);
+  // ─── PHASE 2: ESP-NOW DEFERRED ──────────────────────────────────────────────
+  // ไม่ init ESP-NOW ใน setup() — radio ยัง cold + STA ยังไม่ associate
+  // stepStagedBoot() จะ init หลัง STA up +1s (หรือ fallback 15s ถ้า router บูตช้า / 2s ถ้าไม่มี STA)
   if (!gSafeMode) {
-    Serial.println("[boot] Phase 2: ESP-NOW init...");
-    initEspNow();
+    deferEspNowBoot();
   } else {
     Serial.println("[safe] ESP-NOW suspended on boot (Safe Mode active)");
   }
 
-  // ─── PHASE 3: WebServer + Cloud Services Config (ห่าง 200ms) ──────────────
-  // WebServer เบา, MQTT/Blynk จะ connect เองใน loop() หลัง WiFi STA connected
+  // ─── PHASE 3: WebServer (เบา) + MQTT config only ────────────────────────────
+  // MQTT client ไม่เริ่มใน setup() — เริ่มใน stepStagedBoot() หลัง STA up +5s
   delay(200);
   setupWebServer();
-  initMqttService();
+  loadMqttConfig();
   Serial.printf("[boot] wifi ch=%d espnow ch=%u\n", WiFi.channel(), (unsigned)currentEspNowChannel());
 
   Serial.printf("[boot] AP http://%s/\n", WiFi.softAPIP().toString().c_str());
@@ -122,7 +121,21 @@ void setup() {
     triggerSafeModeAlertSound();
     gMotor.triggerChirp(2);
   }
-  Serial.println("[boot] Staged boot complete: SoftAP+ESP-NOW ready. STA+Cloud pending in loop().");
+  Serial.println("[boot] Staged boot: SoftAP+WebServer ready. STA -> ESP-NOW -> Blynk(+3s) -> MQTT(+5s) -> NTP(+8s) in loop().");
+}
+
+// Staged boot driver — runs every loop(). Each stage waits on the previous one so that radio /
+// network peak currents never stack (STA assoc ➔ ESP-NOW init ➔ cloud services).
+static void stepStagedBoot() {
+  stepDeferredEspNowBoot();   // ESP-NOW init once STA up (+1s) or fallback timeout
+  stepWifiBootPowerRestore(); // boot TX power ➔ kWifiTxPowerDbm
+
+  static bool mqttStarted = false;
+  if (!mqttStarted && !gSafeMode && wifiStaUpMs() >= kStagedMqttDelayMs) {
+    mqttStarted = true;
+    Serial.println("[boot] Staged: starting MQTT client (STA up +5s)");
+    initMqttService();
+  }
 }
 
 struct ButtonChannel {
@@ -243,6 +256,7 @@ void stepBootButton() {
 
 void loop() {
   esp_task_wdt_reset();
+  stepStagedBoot();
   stepEspNowRxProcessing();
   stepBootButton();
   gServer.handleClient();

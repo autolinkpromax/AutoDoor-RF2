@@ -272,17 +272,22 @@ async function toggleRemotePassageClose() {
 }
 
 async function saveSafetyParams() {
-  const closeSec = parseInt($('safetyCloseDelaySec')?.value ?? 3);
+  const debounceSec = parseFloat($('safetyDebounceSec')?.value ?? 0.1);
+  if (isNaN(debounceSec) || debounceSec < 0.05 || debounceSec > 3.0) {
+    setHint('safetyParamsMsg', 'hint err', 'ความไวตรวจจับตัดลำแสง ต้องอยู่ระหว่าง 0.05 ถึง 3.00 วินาที');
+    return;
+  }
+  const closeSec = parseFloat($('safetyCloseDelaySec')?.value ?? 3);
   if (isNaN(closeSec) || closeSec < 0 || closeSec > 60) {
     setHint('safetyParamsMsg', 'hint err', 'หน่วงปิดเมื่อพ้นลำแสง ต้องอยู่ระหว่าง 0 ถึง 60 วินาที');
     return;
   }
-  const revSec = parseInt($('safetyReverseDelaySec')?.value ?? 5);
+  const revSec = parseFloat($('safetyReverseDelaySec')?.value ?? 5);
   if (isNaN(revSec) || revSec < 1 || revSec > 60) {
     setHint('safetyParamsMsg', 'hint err', 'หน่วงปิดเมื่อดีดกลับ ต้องอยู่ระหว่าง 1 ถึง 60 วินาที');
     return;
   }
-  const remoteSec = parseInt($('remotePassageDelaySec')?.value ?? 5);
+  const remoteSec = parseFloat($('remotePassageDelaySec')?.value ?? 5);
   const safeRemoteSec = Math.max(1, Math.min(60, isNaN(remoteSec) ? 5 : remoteSec));
 
   if ($('safetyParamsMsg')) $('safetyParamsMsg').textContent = 'กำลังบันทึก…';
@@ -290,9 +295,10 @@ async function saveSafetyParams() {
     await api('/api/settings', {
       method: 'PUT',
       body: {
-        safetyCloseDelayMs: closeSec * 1000,
-        safetyReverseDelayMs: revSec * 1000,
-        remotePassageDelayMs: safeRemoteSec * 1000
+        safetyDebounceMs: Math.round(debounceSec * 1000),
+        safetyCloseDelayMs: Math.round(closeSec * 1000),
+        safetyReverseDelayMs: Math.round(revSec * 1000),
+        remotePassageDelayMs: Math.round(safeRemoteSec * 1000)
       }
     });
     setHint('safetyParamsMsg', 'hint ok', 'บันทึกเวลาการทำงานเซ็นเซอร์สำเร็จ');

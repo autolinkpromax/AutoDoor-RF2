@@ -75,6 +75,7 @@ extern bool& gSafetySensorEnabled;
 extern bool gSafetySensorBlocked;
 extern uint32_t& gSafetyCloseDelayMs;
 extern uint32_t& gSafetyReverseDelayMs;
+extern uint32_t& gSafetyDebounceMs;
 extern bool& gRemotePassageClose;
 extern uint32_t& gRemotePassageDelayMs;
 extern uint32_t& gSafetyCloseAtMs;

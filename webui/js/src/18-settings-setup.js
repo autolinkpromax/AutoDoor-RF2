@@ -221,7 +221,8 @@ async function loadSettingsForm() {
 
   if ($('swSafetySensor')) $('swSafetySensor').checked = !!settings.safetySensorEnabled;
   if ($('safetySensorType')) $('safetySensorType').value = settings.safetySensorType ?? 0;
-  if ($('safetyCloseDelaySec')) $('safetyCloseDelaySec').value = settings.safetyCloseDelayMs != null ? Math.round(settings.safetyCloseDelayMs / 1000) : 3;
+  if ($('safetyDebounceSec')) $('safetyDebounceSec').value = settings.safetyDebounceMs != null ? (settings.safetyDebounceMs / 1000).toFixed(2) : '0.10';
+  if ($('safetyCloseDelaySec')) $('safetyCloseDelaySec').value = settings.safetyCloseDelayMs != null ? (settings.safetyCloseDelayMs / 1000) : 3;
   if ($('safetyReverseDelaySec')) $('safetyReverseDelaySec').value = settings.safetyReverseDelayMs != null ? Math.round(settings.safetyReverseDelayMs / 1000) : 5;
   if ($('swRemotePassageClose')) $('swRemotePassageClose').checked = settings.remotePassageClose !== false;
   if ($('remotePassageDelaySec')) $('remotePassageDelaySec').value = settings.remotePassageDelayMs != null ? Math.round(settings.remotePassageDelayMs / 1000) : 5;
