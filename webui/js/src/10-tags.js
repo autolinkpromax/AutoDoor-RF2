@@ -1,8 +1,12 @@
 async function refreshTagList() {
   const d = await api('/api/tags');
   const tags = d.tags || [];
+  State.tags = tags;
   State.tagCount = tags.length;
   renderTagList(tags);
+  if (typeof populateWebhookTagDropdown === 'function') {
+    populateWebhookTagDropdown();
+  }
 }
 
 function deviceListKey(tags) {

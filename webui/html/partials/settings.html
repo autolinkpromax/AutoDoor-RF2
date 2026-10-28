@@ -198,7 +198,7 @@
                       <input id="safetyDebounceSec" type="number" min="0.05" max="3.00" step="0.05" placeholder="0.10" style="width:100%; box-sizing:border-box;" />
                       <span class="muted" style="font-size:12px; white-space:nowrap;">วิ</span>
                     </div>
-                    <span class="muted" style="font-size:11px;">(เริ่มต้น 0.10 วิ, สูงสุด 3 วิ, จับจักรยานไว)</span>
+                    <span class="muted" style="font-size:11px;">(0.05 - 3.00 วิ)</span>
                   </div>
 
                   <div style="flex:1; min-width:140px;">
@@ -578,18 +578,26 @@
           </button>
           <div id="cardWebhookBody" class="setupBody collapsed">
             <div class="muted mono" id="hookHostHint" style="margin-bottom:10px;font-size:13px">—</div>
-            <!-- Webhook URL Generator (เปิดแบบ Tag / ระบุตัวตน) -->
-            <div class="hookSec" style="background:rgba(56,189,248,0.03); border:1px solid rgba(56,189,248,0.18); border-radius:10px; padding:12px; margin-bottom:14px;">
-              <b style="color:#38bdf8; display:flex; align-items:center; gap:6px;">
-                <span>⚡</span> เครื่องมือสร้างลิงก์ Webhook (สั่งเปิดแบบ Tag / ระบุตัวตน)
+            <!-- Webhook URL Generator (สั่งงานจากนอกบ้าน / ในบ้าน) -->
+            <div class="hookSec" style="background:rgba(56,189,248,0.04); border:1px solid rgba(56,189,248,0.22); border-radius:10px; padding:14px; margin-bottom:16px;">
+              <b style="color:#38bdf8; display:flex; align-items:center; gap:6px; font-size:14px;">
+                <span>⚡</span> เครื่องมือสร้างลิงก์ Webhook (สั่งงานนอกบ้านผ่านเน็ต / ในบ้าน)
               </b>
-              <div class="muted" style="margin:4px 0 10px; font-size:12px; line-height:1.4;">
-                สร้างลิงก์สำหรับสั่งเปิดประตูจากระยะไกล เมื่อขับผ่านเซ็นเซอร์ ประตูจะปิดตามหลังอัตโนมัติ (ไม่ติดโหมดค้างมือ)
+              <div class="muted" style="margin:4px 0 12px; font-size:12px; line-height:1.45;">
+                สร้างลิงก์ใส่ใน Shortcuts/Siri สั่งเปิดประตูนอกบ้าน เมื่อผ่านเซ็นเซอร์ ประตูจะปิดตามหลังอัตโนมัติ
               </div>
 
               <div style="display:flex; flex-direction:column; gap:10px;">
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                  <div style="flex:1; min-width:140px;">
+                  <div style="flex:1; min-width:160px;">
+                    <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">ช่องทางสั่งงาน</label>
+                    <select id="whGenTarget" style="width:100%; box-sizing:border-box; font-weight:500;">
+                      <option value="blynk" selected>🌐 อินเทอร์เน็ตนอกบ้าน (Blynk Cloud)</option>
+                      <option value="lan">🏠 เครือข่ายในบ้าน (LAN Wi-Fi)</option>
+                    </select>
+                  </div>
+
+                  <div style="flex:1; min-width:160px;">
                     <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">โหมดคำสั่ง</label>
                     <select id="whGenMode" style="width:100%; box-sizing:border-box;">
                       <option value="tag_open" selected>เปิดแบบ Tag (ปิดอัตโนมัติเมื่อพ้นเซ็นเซอร์)</option>
@@ -599,14 +607,14 @@
                     </select>
                   </div>
 
-                  <div id="whGenTagSection" style="flex:1; min-width:140px;">
+                  <div id="whGenTagSection" style="flex:1; min-width:160px;">
                     <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">ระบุชื่อ Tag ที่เปิด</label>
                     <select id="whGenTagId" style="width:100%; box-sizing:border-box;">
                       <option value="">— ทั่วไป (Webhook Tag) —</option>
                     </select>
                   </div>
 
-                  <div id="whGenFallbackSection" style="flex:1; min-width:120px;">
+                  <div id="whGenFallbackSection" class="hidden" style="flex:1; min-width:120px;">
                     <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">ปิดเองหากไม่ผ่าน (Fallback)</label>
                     <div style="display:flex; gap:6px; align-items:center;">
                       <input id="whGenFallbackSec" type="number" min="10" max="3600" step="5" value="60" style="width:100%; box-sizing:border-box;" />
@@ -615,15 +623,15 @@
                   </div>
                 </div>
 
-                <div>
-                  <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">URL ที่สร้างได้ (พร้อมคัดลอก)</label>
+                <div style="margin-top:2px;">
+                  <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">URL ที่สร้างได้ (พร้อมใช้งาน)</label>
                   <div style="display:flex; gap:8px; align-items:center;">
-                    <input id="whGenResultUrl" type="text" readonly style="width:100%; font-family:monospace; font-size:11px; background:rgba(0,0,0,0.2);" />
-                    <button type="button" class="btnPri" style="white-space:nowrap; padding:6px 14px;" data-action="copy-generated-webhook">คัดลอก URL</button>
+                    <input id="whGenResultUrl" type="text" readonly style="width:100%; font-family:monospace; font-size:12px; background:rgba(0,0,0,0.3); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; padding:8px 10px;" />
+                    <button type="button" class="btnPri" style="white-space:nowrap; padding:8px 16px; font-weight:bold;" data-action="copy-generated-webhook">คัดลอก URL</button>
                   </div>
                 </div>
               </div>
-              <div class="hint" id="whGenMsg"></div>
+              <div class="hint" id="whGenMsg" style="margin-top:6px;"></div>
             </div>
 
             <div class="hookSec">
@@ -639,6 +647,7 @@
               <b>ลิงก์สั่งงานผ่านอินเทอร์เน็ต (Blynk Cloud)</b>
               <div class="muted" style="margin-bottom:8px;font-size:12px">สั่งงานเปิด-ปิดประตูผ่านอินเทอร์เน็ตนอกบ้าน</div>
               <div class="hookBtns">
+                <button type="button" class="hookBtn" data-action="copy-blynk-hook" data-slot="tagOpen" style="background:rgba(56,189,248,0.12); border-color:#38bdf8; color:#38bdf8; font-weight:bold;">เปิดแบบ Tag (Auto-Close)</button>
                 <button type="button" class="hookBtn" data-action="copy-blynk-hook" data-slot="open">เปิด</button>
                 <button type="button" class="hookBtn" data-action="copy-blynk-hook" data-slot="stop">หยุด</button>
                 <button type="button" class="hookBtn" data-action="copy-blynk-hook" data-slot="close">ปิด</button>

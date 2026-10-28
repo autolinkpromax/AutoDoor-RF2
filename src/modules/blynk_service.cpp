@@ -200,4 +200,50 @@ BLYNK_WRITE(V2) {
     requestDoorSlot("close", true);
   }
 }
+BLYNK_WRITE(V7) {
+  String paramStr = param.asStr();
+  Serial.printf("[blynk] V7 (Tag Auto Open) rx: '%s'\n", paramStr.c_str());
+  if (paramStr.isEmpty() || paramStr == "0") return;
+
+  // Extract optional tag_id
+  String tagId = (paramStr != "1") ? paramStr : "";
+  String tagLabel = "Blynk Webhook";
+  uint32_t tagCloseDelay = 60000; // 60s fallback auto-close
+  uint32_t tagSafetyDelay = gSafetyCloseDelayMs;
+  uint32_t tagOpenDuration = 0;
+
+  if (!tagId.isEmpty()) {
+    TagStoreLock lock;
+    Tag* t = gTagRegistry.findById(tagId);
+    if (t) {
+      tagLabel = !t->name.isEmpty() ? t->name : t->id;
+      if (t->tagCloseDelayMs > 0) tagCloseDelay = t->tagCloseDelayMs;
+      if (t->tagSafetyCloseDelayMs > 0) tagSafetyDelay = t->tagSafetyCloseDelayMs;
+      tagOpenDuration = t->tagOpenDurationMs;
+    }
+  }
+
+  gActiveTriggerTagId = tagId.isEmpty() ? "WEBHOOK" : tagId;
+  gPrevActiveDelayMaxMs = tagCloseDelay;
+  gPrevActiveSafetyDelayMs = tagSafetyDelay;
+  gDoorController.tagOpenDurationMsRef() = tagOpenDuration;
+
+  uint32_t now = millis();
+  bool ok = false;
+  if (gDoorState == DoorState::Open) {
+    gDoorController.isManualOpenStateRef() = false;
+    gDoorController.safetySensor().clearPassage();
+    gDoorController.autoCloseEngine().armPendingClose(now + tagCloseDelay);
+    ok = true;
+  } else {
+    ok = requestDoorSlot("open", false /* manualCommand = false */, false /* manualHold = false */, gActiveTriggerTagId.c_str());
+  }
+
+  if (ok) {
+    logDiagEvent(DoorEventCode::TagOpen, DoorEventLevel::Success, DiagReasonCode::SrcBlynk, 0, 0, tagLabel.c_str());
+    Serial.printf("[blynk] tag_open executed (tag='%s', fallback=%lu ms, safetyDelay=%lu ms)\n",
+                  tagLabel.c_str(), (unsigned long)tagCloseDelay, (unsigned long)tagSafetyDelay);
+  }
+}
+
 // Note: V3 is read-only (Magnetic Sensor status publish only — no write handler needed)

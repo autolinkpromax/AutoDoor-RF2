@@ -466,6 +466,7 @@ void SystemApiController::handleWebhookGet() {
     blynk["open"] = blynkBase + "&V0=1";
     blynk["stop"] = blynkBase + "&V1=1";
     blynk["close"] = blynkBase + "&V2=1";
+    blynk["tagOpen"] = blynkBase + "&V7=1";
     blynk["tagAutoToggle"] = blynkBase + "&V3=1";
   }
 

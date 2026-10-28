@@ -1934,8 +1934,12 @@ window.setDashEventFilter = setDashEventFilter;
 async function refreshTagList() {
   const d = await api('/api/tags');
   const tags = d.tags || [];
+  State.tags = tags;
   State.tagCount = tags.length;
   renderTagList(tags);
+  if (typeof populateWebhookTagDropdown === 'function') {
+    populateWebhookTagDropdown();
+  }
 }
 
 function deviceListKey(tags) {
@@ -3143,6 +3147,7 @@ async function loadWebhookUi() {
     populateWebhookTagDropdown();
     updateWebhookGeneratorUrl();
     if (!$('whGenMode')?.dataset?.bound) {
+      $('whGenTarget')?.addEventListener('change', updateWebhookGeneratorUrl);
       $('whGenMode')?.addEventListener('change', updateWebhookGeneratorUrl);
       $('whGenTagId')?.addEventListener('change', updateWebhookGeneratorUrl);
       $('whGenFallbackSec')?.addEventListener('input', updateWebhookGeneratorUrl);
@@ -3206,7 +3211,7 @@ async function copyBlynkHookUrl(slot) {
     setHint('hookMsg', 'hint err', 'ตั้งค่า Blynk Token ก่อน');
     return;
   }
-  const labels = { open: 'เปิด (Blynk)', stop: 'หยุด (Blynk)', close: 'ปิด (Blynk)' };
+  const labels = { tagOpen: 'เปิดแบบ Tag (Blynk)', open: 'เปิด (Blynk)', stop: 'หยุด (Blynk)', close: 'ปิด (Blynk)' };
   await copyHookText(url, 'คัดลอก ' + (labels[slot] || slot) + ' แล้ว');
 }
 
@@ -3214,8 +3219,8 @@ function buildHaLanYaml() {
   if (!State.webhookCache?.hooks) return '';
   const h = State.webhookCache.hooks;
   return [
-    '# Home Assistant — ควบคุมผ่าน LAN (ต้องอยู่เครือข่ายเดียวกับเครื่อง)',
-    '# เพิ่มที่ /homeassistant/configuration.yaml',
+
+
     'rest_command:',
     '  autodoor_rf2_lan_open:',
     '    url: "' + h.open + '"',
@@ -3231,7 +3236,7 @@ function buildHaLanYaml() {
     '    method: GET',
     '',
     '',
-    '# เพิ่มที่ /homeassistant/scripts.yaml',
+
     'autodoor_rf2_lan_open:',
     '  alias: "AutoDoor-RF2 เปิดประตู (LAN)"',
     '  mode: single',
@@ -3257,8 +3262,8 @@ function buildHaLanYaml() {
     '    - service: rest_command.autodoor_rf2_lan_tag_auto_toggle',
     '',
     '',
-    '# การเพิ่มปุ่มในหน้า dashboard',
-    '# กด Edit Dashboard -> กด Add Card -> Manual',
+
+
     'type: horizontal-stack',
     'cards:',
     '  - type: button',
@@ -3309,8 +3314,8 @@ function buildHaBlynkYaml() {
   const bStop = b?.stop || base + '&V1=1';
   const bClose = b?.close || base + '&V2=1';
   return [
-    '# Home Assistant + Blynk Cloud (ไม่ต้องอยู่ Wi‑Fi เดียวกับเครื่อง)',
-    '# เพิ่มที่ /homeassistant/configuration.yaml',
+
+
     'rest_command:',
     '  autodoor_rf2_blynk_open:',
     '    url: "' + bOpen + '"',
@@ -3323,7 +3328,7 @@ function buildHaBlynkYaml() {
     '    method: GET',
     '',
     '',
-    '# เพิ่มที่ /homeassistant/scripts.yaml',
+
     'autodoor_rf2_blynk_open:',
     '  alias: "AutoDoor-RF2 เปิดประตู (Blynk)"',
     '  mode: single',
@@ -3343,8 +3348,8 @@ function buildHaBlynkYaml() {
     '    - service: rest_command.autodoor_rf2_blynk_close',
     '',
     '',
-    '# การเพิ่มปุ่มในหน้า dashboard (ควบคุมผ่าน Blynk Cloud)',
-    '# กด Edit Dashboard -> กด Add Card -> Manual',
+
+
     'type: horizontal-stack',
     'cards:',
     '  - type: button',
@@ -3523,9 +3528,8 @@ async function testOutboundWebhook() {
   }
 }
 
-
 function updateWebhookGeneratorUrl() {
-  if (!State.webhookCache) return;
+  const target = $('whGenTarget')?.value || 'blynk';
   const mode = $('whGenMode')?.value || 'tag_open';
   const tagId = $('whGenTagId')?.value || '';
   const fallbackSec = parseInt($('whGenFallbackSec')?.value || 60);
@@ -3533,31 +3537,66 @@ function updateWebhookGeneratorUrl() {
   const tagSec = $('whGenTagSection');
   const fbSec = $('whGenFallbackSection');
   if (tagSec) tagSec.style.display = (mode === 'tag_open') ? 'block' : 'none';
-  if (fbSec) fbSec.style.display = (mode === 'tag_open') ? 'block' : 'none';
+  if (fbSec) fbSec.style.display = (target === 'lan' && mode === 'tag_open') ? 'block' : 'none';
 
-  const base = 'http://' + (State.webhookCache.host || location.host);
-  const key = State.webhookCache.key || '';
   let url = '';
+  const msgEl = $('whGenMsg');
 
-  if (mode === 'tag_open') {
-    url = `${base}/hook/door/tag_open?key=${encodeURIComponent(key)}`;
-    if (tagId) {
-      url += `&tag_id=${encodeURIComponent(tagId)}`;
+  if (target === 'blynk') {
+    const blynkHost = State.webhookCache?.blynkHost || 'sgp1.blynk.cloud';
+    const blynkToken = State.webhookCache?.blynkToken || State.blynkTokenSaved || '';
+    if (!blynkToken || blynkToken.length < 8) {
+      if (msgEl) setHint('whGenMsg', 'hint warn', '⚠️ กรุณาตั้งค่า Blynk Token ในการตั้งค่า Blynk ด้านบนก่อน จึงจะใช้ลิงก์สั่งงานนอกบ้านได้');
+      const resEl = $('whGenResultUrl');
+      if (resEl) resEl.value = 'https://' + blynkHost + '/external/api/update?token=ใส่_BLYNK_TOKEN_ที่นี่&V7=1';
+      return;
     }
-    if (fallbackSec && fallbackSec !== 60) {
-      url += `&fallback=${fallbackSec}`;
+    const blynkBase = 'https://' + blynkHost + '/external/api/update?token=' + encodeURIComponent(blynkToken);
+    if (mode === 'tag_open') {
+      const vVal = tagId ? encodeURIComponent(tagId) : '1';
+      url = `${blynkBase}&V7=${vVal}`;
+    } else if (mode === 'open') {
+      url = `${blynkBase}&V0=1`;
+    } else if (mode === 'stop') {
+      url = `${blynkBase}&V1=1`;
+    } else if (mode === 'close') {
+      url = `${blynkBase}&V2=1`;
     }
+    if (msgEl) setHint('whGenMsg', 'hint ok', '🌐 ลิงก์ Blynk Cloud (สั่งเปิดได้จากทุกที่ในโลกผ่านเน็ต 4G/5G เมื่อขับผ่านเซ็นเซอร์จะปิดตามหลังอัตโนมัติ)');
   } else {
-    url = `${base}/hook/door/${mode}?key=${encodeURIComponent(key)}`;
+    // LAN target
+    const host = State.webhookCache?.host || location.host;
+    const base = 'http://' + host;
+    const key = State.webhookCache?.key || '';
+    if (mode === 'tag_open') {
+      url = `${base}/hook/door/tag_open?key=${encodeURIComponent(key)}`;
+      if (tagId) {
+        url += `&tag_id=${encodeURIComponent(tagId)}`;
+      }
+      if (fallbackSec && fallbackSec !== 60) {
+        url += `&fallback=${fallbackSec}`;
+      }
+    } else {
+      url = `${base}/hook/door/${mode}?key=${encodeURIComponent(key)}`;
+    }
+    if (msgEl) setHint('whGenMsg', 'hint ok', '🏠 ลิงก์ภายในบ้าน (LAN Wi-Fi)');
   }
 
   const resEl = $('whGenResultUrl');
   if (resEl) resEl.value = url;
 }
 
-function populateWebhookTagDropdown() {
+async function populateWebhookTagDropdown() {
   const sel = $('whGenTagId');
   if (!sel) return;
+  if (!State.tags || !State.tags.length) {
+    try {
+      const d = await api('/api/tags');
+      if (d && Array.isArray(d.tags)) {
+        State.tags = d.tags;
+      }
+    } catch (_) {}
+  }
   const currentVal = sel.value;
   sel.innerHTML = '<option value="">— ทั่วไป (Webhook Tag) —</option>';
   if (Array.isArray(State.tags)) {
@@ -3570,17 +3609,18 @@ function populateWebhookTagDropdown() {
     }
   }
   if (currentVal) sel.value = currentVal;
+  updateWebhookGeneratorUrl();
 }
 
 async function copyGeneratedWebhookUrl() {
   const resEl = $('whGenResultUrl');
   const url = resEl?.value;
-  if (!url) {
-    setHint('whGenMsg', 'hint err', 'ไม่มี URL ให้คัดลอก');
+  if (!url || url.includes('ใส่_BLYNK_TOKEN_ที่นี่')) {
+    setHint('whGenMsg', 'hint err', 'กรุณาตั้งค่า Blynk Token ให้เรียบร้อยก่อน');
     return;
   }
   await copyHookText(url, 'คัดลอก Webhook URL แล้ว');
-  setHint('whGenMsg', 'hint ok', 'คัดลอก Webhook URL เรียบร้อย นำไปวางใน Shortcuts/Siri ได้ทันที');
+  setHint('whGenMsg', 'hint ok', '✅ คัดลอก Webhook URL เรียบร้อย นำไปใส่ใน iOS Shortcuts หรือกดสั่งงานได้ทันที!');
 }
 function toggleSetupWizard() {
   State.setupWizardOpen = !State.setupWizardOpen;

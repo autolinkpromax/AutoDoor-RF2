@@ -56,14 +56,27 @@ def minify_text(text: str, ext: str) -> str:
         return "".join(lines)
     if ext == ".js":
         text = re.sub(r"/\*[\s\S]*?\*/", "", text)
-        lines = [ln.strip() for ln in text.splitlines() if ln.strip() and not ln.strip().startswith("//")]
-        text = "\n".join(lines)
-        text = re.sub(r"[ \t]{2,}", " ", text)
-        text = re.sub(r";\s+", ";", text)
-        text = re.sub(r",\s+", ",", text)
-        text = re.sub(r"\{\s+", "{", text)
-        text = re.sub(r"\s+\}", "}", text)
-        return text
+        lines = []
+        for ln in text.splitlines():
+            l = ln.strip()
+            if not l or l.startswith("//"):
+                continue
+            if "//" in l and "http:" not in l and "https:" not in l and '"' not in l and "'" not in l and '`' not in l:
+                l = l.split("//")[0].strip()
+            if l:
+                lines.append(l)
+        out = ""
+        for l in lines:
+            if out and out[-1] in (";", "{", "}", ","):
+                out += l
+            else:
+                out += ("\n" if out else "") + l
+        out = re.sub(r"[ \t]{2,}", " ", out)
+        out = re.sub(r";\s+", ";", out)
+        out = re.sub(r",\s+", ",", out)
+        out = re.sub(r"\{\s+", "{", out)
+        out = re.sub(r"\s+\}", "}", out)
+        return out
     return text
 
 MIME = {
