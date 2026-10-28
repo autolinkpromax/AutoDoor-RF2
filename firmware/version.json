@@ -1,7 +1,7 @@
 {
-  "version": "1.0.8",
-  "releaseDate": "2026-10-28 06:27:21 UTC",
+  "version": "1.0.9",
+  "releaseDate": "2026-10-28 14:57:49 UTC",
   "targetChip": "ESP32-C3",
   "file": "firmware_autodoor_ota.bin",
-  "changelog": "V1.0.8: เพิ่มหน่วงเวลาเปิดค้างใน Webhook Generator, แสดงเฉพาะชื่อ Tag, และแก้ไขการเชื่อมโยงโมดูล WebUI"
+  "changelog": "V1.0.9: แก้ไขระบบหน่วงเวลาเปิดค้างสำหรับ Webhook & Blynk และปรับปรุงการโหลด WebUI"
 }
