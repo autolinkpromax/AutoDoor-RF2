@@ -6,8 +6,12 @@ async function loadWebhookUi() {
     if (!$('whGenMode')?.dataset?.bound) {
       $('whGenTarget')?.addEventListener('change', updateWebhookGeneratorUrl);
       $('whGenMode')?.addEventListener('change', updateWebhookGeneratorUrl);
-      $('whGenTagId')?.addEventListener('change', updateWebhookGeneratorUrl);
+      $('whGenTagId')?.addEventListener('change', () => {
+        onWebhookTagChange();
+        updateWebhookGeneratorUrl();
+      });
       $('whGenFallbackSec')?.addEventListener('input', updateWebhookGeneratorUrl);
+      $('whGenFallbackSec')?.addEventListener('change', updateWebhookGeneratorUrl);
       if ($('whGenMode')) $('whGenMode').dataset.bound = '1';
     }
 
@@ -75,166 +79,38 @@ async function copyBlynkHookUrl(slot) {
 function buildHaLanYaml() {
   if (!State.webhookCache?.hooks) return '';
   const h = State.webhookCache.hooks;
-  return [
-
-
-    'rest_command:',
-    '  autodoor_rf2_lan_open:',
-    '    url: "' + h.open + '"',
-    '    method: GET',
-    '  autodoor_rf2_lan_stop:',
-    '    url: "' + h.stop + '"',
-    '    method: GET',
-    '  autodoor_rf2_lan_close:',
-    '    url: "' + h.close + '"',
-    '    method: GET',
-    '  autodoor_rf2_lan_tag_auto_toggle:',
-    '    url: "' + (h.tagAutoToggle || '') + '"',
-    '    method: GET',
-    '',
-    '',
-
-    'autodoor_rf2_lan_open:',
-    '  alias: "AutoDoor-RF2 เปิดประตู (LAN)"',
-    '  mode: single',
-    '  sequence:',
-    '    - service: rest_command.autodoor_rf2_lan_open',
-    '',
-    'autodoor_rf2_lan_stop:',
-    '  alias: "AutoDoor-RF2 หยุดประตู (LAN)"',
-    '  mode: single',
-    '  sequence:',
-    '    - service: rest_command.autodoor_rf2_lan_stop',
-    '',
-    'autodoor_rf2_lan_close:',
-    '  alias: "AutoDoor-RF2 ปิดประตู (LAN)"',
-    '  mode: single',
-    '  sequence:',
-    '    - service: rest_command.autodoor_rf2_lan_close',
-    '',
-    'autodoor_rf2_lan_tag_auto_toggle:',
-    '  alias: "AutoDoor-RF2 สลับ Tag อัตโนมัติ (LAN)"',
-    '  mode: single',
-    '  sequence:',
-    '    - service: rest_command.autodoor_rf2_lan_tag_auto_toggle',
-    '',
-    '',
-
-
-    'type: horizontal-stack',
-    'cards:',
-    '  - type: button',
-    '    name: เปิดประตู',
-    '    icon: mdi:garage-open',
-    '    tap_action:',
-    '      action: call-service',
-    '      service: script.autodoor_rf2_lan_open',
-    '    hold_action:',
-    '      action: none',
-    '  - type: button',
-    '    name: หยุดประตู',
-    '    icon: mdi:stop-circle-outline',
-    '    tap_action:',
-    '      action: call-service',
-    '      service: script.autodoor_rf2_lan_stop',
-    '    hold_action:',
-    '      action: none',
-    '  - type: button',
-    '    name: ปิดประตู',
-    '    icon: mdi:garage',
-    '    tap_action:',
-    '      action: call-service',
-    '      service: script.autodoor_rf2_lan_close',
-    '    hold_action:',
-    '      action: none',
-    '  - type: button',
-    '    name: ล็อก Tag',
-    '    icon: mdi:lock',
-    '    tap_action:',
-    '      action: call-service',
-    '      service: script.autodoor_rf2_lan_tag_auto_toggle',
-    '    hold_action:',
-    '      action: none',
-    'title: AutoDoor-RF2 (LAN)',
-  ].join('\n');
+  const list = [
+    ['open', 'เปิดประตู', 'mdi:garage-open', h.open],
+    ['stop', 'หยุดประตู', 'mdi:stop-circle-outline', h.stop],
+    ['close', 'ปิดประตู', 'mdi:garage', h.close],
+    ['tag_auto_toggle', 'สลับ Tag อัตโนมัติ', 'mdi:lock', h.tagAutoToggle || '']
+  ];
+  let rc = 'rest_command:\n', sc = '', cd = 'type: horizontal-stack\ncards:\n';
+  for (const [k, name, icon, url] of list) {
+    rc += `  autodoor_rf2_lan_${k}:\n    url: "${url}"\n    method: GET\n`;
+    sc += `autodoor_rf2_lan_${k}:\n  alias: "AutoDoor-RF2 ${name} (LAN)"\n  mode: single\n  sequence:\n    - service: rest_command.autodoor_rf2_lan_${k}\n\n`;
+    cd += `  - type: button\n    name: ${name}\n    icon: ${icon}\n    tap_action:\n      action: call-service\n      service: script.autodoor_rf2_lan_${k}\n    hold_action:\n      action: none\n`;
+  }
+  return rc + '\n' + sc + cd + 'title: AutoDoor-RF2 (LAN)\n';
 }
 
 function buildHaBlynkYaml() {
   const b = State.webhookCache?.blynk;
   const host = State.webhookCache?.blynkHost || 'sgp1.blynk.cloud';
-  const tok =
-    State.webhookCache?.blynkToken && State.webhookCache.blynkToken.length >= 8
-      ? State.webhookCache.blynkToken
-      : 'YOUR_BLYNK_TOKEN';
+  const tok = State.webhookCache?.blynkToken?.length >= 8 ? State.webhookCache.blynkToken : 'YOUR_BLYNK_TOKEN';
   const base = 'https://' + host + '/external/api/update?token=' + tok;
-  const bOpen = b?.open || base + '&V0=1';
-  const bStop = b?.stop || base + '&V1=1';
-  const bClose = b?.close || base + '&V2=1';
-  return [
-
-
-    'rest_command:',
-    '  autodoor_rf2_blynk_open:',
-    '    url: "' + bOpen + '"',
-    '    method: GET',
-    '  autodoor_rf2_blynk_stop:',
-    '    url: "' + bStop + '"',
-    '    method: GET',
-    '  autodoor_rf2_blynk_close:',
-    '    url: "' + bClose + '"',
-    '    method: GET',
-    '',
-    '',
-
-    'autodoor_rf2_blynk_open:',
-    '  alias: "AutoDoor-RF2 เปิดประตู (Blynk)"',
-    '  mode: single',
-    '  sequence:',
-    '    - service: rest_command.autodoor_rf2_blynk_open',
-    '',
-    'autodoor_rf2_blynk_stop:',
-    '  alias: "AutoDoor-RF2 หยุดประตู (Blynk)"',
-    '  mode: single',
-    '  sequence:',
-    '    - service: rest_command.autodoor_rf2_blynk_stop',
-    '',
-    'autodoor_rf2_blynk_close:',
-    '  alias: "AutoDoor-RF2 ปิดประตู (Blynk)"',
-    '  mode: single',
-    '  sequence:',
-    '    - service: rest_command.autodoor_rf2_blynk_close',
-    '',
-    '',
-
-
-    'type: horizontal-stack',
-    'cards:',
-    '  - type: button',
-    '    name: เปิดประตู',
-    '    icon: mdi:garage-open',
-    '    tap_action:',
-    '      action: call-service',
-    '      service: script.autodoor_rf2_blynk_open',
-    '    hold_action:',
-    '      action: none',
-    '  - type: button',
-    '    name: หยุดประตู',
-    '    icon: mdi:stop-circle-outline',
-    '    tap_action:',
-    '      action: call-service',
-    '      service: script.autodoor_rf2_blynk_stop',
-    '    hold_action:',
-    '      action: none',
-    '  - type: button',
-    '    name: ปิดประตู',
-    '    icon: mdi:garage',
-    '    tap_action:',
-    '      action: call-service',
-    '      service: script.autodoor_rf2_blynk_close',
-    '    hold_action:',
-    '      action: none',
-    'title: AutoDoor-RF2 (Blynk Cloud)',
-  ].join('\n');
+  const list = [
+    ['open', 'เปิดประตู', 'mdi:garage-open', b?.open || base + '&V0=1'],
+    ['stop', 'หยุดประตู', 'mdi:stop-circle-outline', b?.stop || base + '&V1=1'],
+    ['close', 'ปิดประตู', 'mdi:garage', b?.close || base + '&V2=1']
+  ];
+  let rc = 'rest_command:\n', sc = '', cd = 'type: horizontal-stack\ncards:\n';
+  for (const [k, name, icon, url] of list) {
+    rc += `  autodoor_rf2_blynk_${k}:\n    url: "${url}"\n    method: GET\n`;
+    sc += `autodoor_rf2_blynk_${k}:\n  alias: "AutoDoor-RF2 ${name} (Blynk)"\n  mode: single\n  sequence:\n    - service: rest_command.autodoor_rf2_blynk_${k}\n\n`;
+    cd += `  - type: button\n    name: ${name}\n    icon: ${icon}\n    tap_action:\n      action: call-service\n      service: script.autodoor_rf2_blynk_${k}\n    hold_action:\n      action: none\n`;
+  }
+  return rc + '\n' + sc + cd + 'title: AutoDoor-RF2 (Blynk Cloud)\n';
 }
 
 async function copyHaLanYaml() {
@@ -385,16 +261,28 @@ async function testOutboundWebhook() {
   }
 }
 
+function onWebhookTagChange() {
+  const tagId = $('whGenTagId')?.value;
+  if (tagId && Array.isArray(State.tags)) {
+    const t = State.tags.find(x => x.id === tagId);
+    if (t && t.tagCloseDelayMs > 0 && $('whGenFallbackSec')) {
+      $('whGenFallbackSec').value = Math.round(t.tagCloseDelayMs / 1000);
+    }
+  } else if ($('whGenFallbackSec')) {
+    $('whGenFallbackSec').value = 60;
+  }
+}
+
 function updateWebhookGeneratorUrl() {
   const target = $('whGenTarget')?.value || 'blynk';
   const mode = $('whGenMode')?.value || 'tag_open';
   const tagId = $('whGenTagId')?.value || '';
-  const fallbackSec = parseInt($('whGenFallbackSec')?.value || 60);
+  const fallbackSec = parseInt($('whGenFallbackSec')?.value || 60, 10);
 
   const tagSec = $('whGenTagSection');
   const fbSec = $('whGenFallbackSection');
   if (tagSec) tagSec.style.display = (mode === 'tag_open') ? 'block' : 'none';
-  if (fbSec) fbSec.style.display = (target === 'lan' && mode === 'tag_open') ? 'block' : 'none';
+  if (fbSec) fbSec.style.display = (mode === 'tag_open' || (target === 'lan' && mode === 'open')) ? 'block' : 'none';
 
   let url = '';
   const msgEl = $('whGenMsg');
@@ -410,8 +298,23 @@ function updateWebhookGeneratorUrl() {
     }
     const blynkBase = 'https://' + blynkHost + '/external/api/update?token=' + encodeURIComponent(blynkToken);
     if (mode === 'tag_open') {
-      const vVal = tagId ? encodeURIComponent(tagId) : '1';
-      url = `${blynkBase}&V7=${vVal}`;
+      let vVal = '1';
+      const t = (tagId && Array.isArray(State.tags)) ? State.tags.find(x => x.id === tagId) : null;
+      const tagDefaultSec = t && t.tagCloseDelayMs > 0 ? Math.round(t.tagCloseDelayMs / 1000) : 60;
+      if (tagId) {
+        if (fallbackSec && fallbackSec !== tagDefaultSec) {
+          vVal = `${tagId}:${fallbackSec}`;
+        } else {
+          vVal = tagId;
+        }
+      } else {
+        if (fallbackSec && fallbackSec !== 60) {
+          vVal = String(fallbackSec);
+        } else {
+          vVal = '1';
+        }
+      }
+      url = `${blynkBase}&V7=${encodeURIComponent(vVal)}`;
     } else if (mode === 'open') {
       url = `${blynkBase}&V0=1`;
     } else if (mode === 'stop') {
@@ -419,7 +322,7 @@ function updateWebhookGeneratorUrl() {
     } else if (mode === 'close') {
       url = `${blynkBase}&V2=1`;
     }
-    if (msgEl) setHint('whGenMsg', 'hint ok', '🌐 ลิงก์ Blynk Cloud (สั่งเปิดได้จากทุกที่ในโลกผ่านเน็ต 4G/5G เมื่อขับผ่านเซ็นเซอร์จะปิดตามหลังอัตโนมัติ)');
+    if (msgEl) setHint('whGenMsg', 'hint ok', `🌐 ลิงก์ Blynk Cloud (สั่งเปิดจากนอกบ้าน หน่วงเวลาเปิดค้าง ${fallbackSec} วิ หรือปิดทันทีเมื่อขับผ่านเซ็นเซอร์)`);
   } else {
     // LAN target
     const host = State.webhookCache?.host || location.host;
@@ -430,8 +333,15 @@ function updateWebhookGeneratorUrl() {
       if (tagId) {
         url += `&tag_id=${encodeURIComponent(tagId)}`;
       }
-      if (fallbackSec && fallbackSec !== 60) {
-        url += `&fallback=${fallbackSec}`;
+      const t = (tagId && Array.isArray(State.tags)) ? State.tags.find(x => x.id === tagId) : null;
+      const tagDefaultSec = t && t.tagCloseDelayMs > 0 ? Math.round(t.tagCloseDelayMs / 1000) : 60;
+      if (fallbackSec && fallbackSec !== tagDefaultSec) {
+        url += `&delay=${fallbackSec}`;
+      }
+    } else if (mode === 'open') {
+      url = `${base}/hook/door/open?key=${encodeURIComponent(key)}`;
+      if (fallbackSec && fallbackSec > 0 && fallbackSec !== 60) {
+        url += `&delay=${fallbackSec}`;
       }
     } else {
       url = `${base}/hook/door/${mode}?key=${encodeURIComponent(key)}`;
@@ -460,7 +370,7 @@ async function populateWebhookTagDropdown() {
     for (const t of State.tags) {
       const opt = document.createElement('option');
       opt.value = t.id;
-      const name = t.name ? `${t.name} (${t.id})` : t.id;
+      const name = (t.name && t.name.trim().length > 0) ? t.name.trim() : (t.id || 'Tag');
       opt.textContent = name;
       sel.appendChild(opt);
     }

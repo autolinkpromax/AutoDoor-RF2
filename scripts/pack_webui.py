@@ -5,6 +5,8 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -55,6 +57,13 @@ def minify_text(text: str, ext: str) -> str:
         lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
         return "".join(lines)
     if ext == ".js":
+        cmd = "npx.cmd" if sys.platform == "win32" else "npx"
+        try:
+            p = subprocess.run([cmd, "--no-install", "terser", "--compress"], input=text, encoding="utf-8", capture_output=True, timeout=20)
+            if p.returncode == 0 and p.stdout.strip():
+                return p.stdout.strip()
+        except Exception:
+            pass
         text = re.sub(r"/\*[\s\S]*?\*/", "", text)
         lines = []
         for ln in text.splitlines():

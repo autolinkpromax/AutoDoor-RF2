@@ -83,14 +83,26 @@ void DoorApiController::handleHookDoorSlot(const char* slot) {
     return;
   }
   gActiveTriggerTagId = "";
-  const bool isManualHold = (strcmp(slot, "open") == 0 || strcmp(slot, "stop") == 0);
+
+  uint32_t holdSec = 0;
+  if (_server.hasArg("delay")) holdSec = _server.arg("delay").toInt();
+  else if (_server.hasArg("hold")) holdSec = _server.arg("hold").toInt();
+  else if (_server.hasArg("fallback")) holdSec = _server.arg("fallback").toInt();
+
+  const bool isManualHold = (strcmp(slot, "open") == 0 && holdSec == 0) || strcmp(slot, "stop") == 0;
   const bool ok = requestDoorSlot(String(slot), true, isManualHold);
   if (ok && strcmp(slot, "open") == 0) {
     logDoorEvent(DoorEventCode::ManualOpen, DoorEventLevel::Info, 0, "WEB");
+    if (holdSec > 0 && holdSec <= 86400) {
+      uint32_t now = millis();
+      gDoorController.isManualOpenStateRef() = false;
+      gDoorController.autoCloseEngine().armPendingClose(now + (holdSec * 1000));
+    }
   }
   JsonDocument doc;
   doc["ok"] = ok;
   doc["doorState"] = doorStateToString(gDoorState);
+  if (holdSec > 0) doc["holdSec"] = holdSec;
   sendJson(ok ? 200 : 409, doc);
 }
 
@@ -123,15 +135,20 @@ void DoorApiController::handleHookDoorTagOpen() {
   }
 
   // Fallback auto-close delay override if supplied
-  if (_server.hasArg("fallback")) {
+  if (_server.hasArg("delay")) {
+    uint32_t dSec = _server.arg("delay").toInt();
+    if (dSec > 0 && dSec <= 3600) {
+      tagCloseDelay = dSec * 1000;
+    }
+  } else if (_server.hasArg("fallback")) {
     uint32_t fSec = _server.arg("fallback").toInt();
     if (fSec > 0 && fSec <= 3600) {
       tagCloseDelay = fSec * 1000;
     }
-  } else if (_server.hasArg("delay")) {
-    uint32_t dSec = _server.arg("delay").toInt();
-    if (dSec > 0 && dSec <= 3600) {
-      tagCloseDelay = dSec * 1000;
+  } else if (_server.hasArg("hold")) {
+    uint32_t hSec = _server.arg("hold").toInt();
+    if (hSec > 0 && hSec <= 3600) {
+      tagCloseDelay = hSec * 1000;
     }
   }
 

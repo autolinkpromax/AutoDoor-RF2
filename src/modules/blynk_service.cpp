@@ -205,9 +205,49 @@ BLYNK_WRITE(V7) {
   Serial.printf("[blynk] V7 (Tag Auto Open) rx: '%s'\n", paramStr.c_str());
   if (paramStr.isEmpty() || paramStr == "0") return;
 
-  // Extract optional tag_id
-  String tagId = (paramStr != "1") ? paramStr : "";
-  String tagLabel = "Blynk Webhook";
+  // Extract optional tag_id and custom delay
+  String tagId = "";
+  uint32_t customDelaySec = 0;
+
+  int sepIdx = paramStr.indexOf(':');
+  if (sepIdx < 0) sepIdx = paramStr.indexOf(',');
+
+  if (sepIdx >= 0) {
+    tagId = paramStr.substring(0, sepIdx);
+    customDelaySec = paramStr.substring(sepIdx + 1).toInt();
+  } else {
+    // Check if matches an existing Tag ID in registry
+    bool found = false;
+    {
+      TagStoreLock lock;
+      Tag* existingTag = gTagRegistry.findById(paramStr);
+      if (existingTag != nullptr) {
+        tagId = paramStr;
+        found = true;
+      }
+    }
+    if (!found) {
+      // Check if pure number (delay in seconds)
+      bool isNumber = true;
+      for (unsigned int i = 0; i < paramStr.length(); i++) {
+        if (!isDigit(paramStr[i])) { isNumber = false; break; }
+      }
+      if (isNumber) {
+        uint32_t n = paramStr.toInt();
+        if (n > 1) {
+          customDelaySec = n;
+        }
+      } else {
+        tagId = paramStr;
+      }
+    }
+  }
+
+  if (tagId == "1" || tagId.equalsIgnoreCase("auto") || tagId.equalsIgnoreCase("default")) {
+    tagId = "";
+  }
+
+  String tagLabel = tagId.isEmpty() ? "Blynk Webhook" : tagId;
   uint32_t tagCloseDelay = 60000; // 60s fallback auto-close
   uint32_t tagSafetyDelay = gSafetyCloseDelayMs;
   uint32_t tagOpenDuration = 0;
@@ -221,6 +261,10 @@ BLYNK_WRITE(V7) {
       if (t->tagSafetyCloseDelayMs > 0) tagSafetyDelay = t->tagSafetyCloseDelayMs;
       tagOpenDuration = t->tagOpenDurationMs;
     }
+  }
+
+  if (customDelaySec > 0 && customDelaySec <= 3600) {
+    tagCloseDelay = customDelaySec * 1000;
   }
 
   gActiveTriggerTagId = tagId.isEmpty() ? "WEBHOOK" : tagId;
