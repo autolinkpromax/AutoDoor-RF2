@@ -57,13 +57,14 @@ def minify_text(text: str, ext: str) -> str:
         lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
         return "".join(lines)
     if ext == ".js":
-        cmd = "npx.cmd" if sys.platform == "win32" else "npx"
-        try:
-            p = subprocess.run([cmd, "--no-install", "terser", "--compress"], input=text, encoding="utf-8", capture_output=True, timeout=20)
-            if p.returncode == 0 and p.stdout.strip():
-                return p.stdout.strip()
-        except Exception:
-            pass
+        if len(text) > 10000:
+            cmd = "npx.cmd" if sys.platform == "win32" else "npx"
+            try:
+                p = subprocess.run([cmd, "--no-install", "terser", "--compress"], input=text, encoding="utf-8", capture_output=True, timeout=20)
+                if p.returncode == 0 and p.stdout.strip():
+                    return p.stdout.strip()
+            except Exception:
+                pass
         text = re.sub(r"/\*[\s\S]*?\*/", "", text)
         lines = []
         for ln in text.splitlines():
@@ -205,10 +206,8 @@ def main():
         loader_vname = f"loader.{file_hash(payloads['js/core/loader.js'])}.js"
     if "js/bootstrap.js" in payloads and loader_vname:
         text = payloads["js/bootstrap.js"].decode("utf-8")
-        text = text.replace(
-            "from './core/loader.js'",
-            f"from '/assets/{loader_vname}'",
-        )
+        for prefix in ["from './core/loader.js'", 'from "./core/loader.js"', 'from"./core/loader.js"', "from'./core/loader.js'"]:
+            text = text.replace(prefix, f"from '/assets/{loader_vname}'")
         payloads["js/bootstrap.js"] = text.encode("utf-8")
 
     versioned: dict[str, str] = {}

@@ -2432,50 +2432,52 @@ static const char a14_app_bundle_21cf51_js[] PROGMEM =
 ;
 static const size_t a14_app_bundle_21cf51_js_len = 179247;
 
-static const char a15_bootstrap_b4d2fb_js[] PROGMEM =
-  "import{initShell,hideLoader,preloadViews}from\"./core/loader.js\";async function boot(){try{await initShell(),\"function\"=="
-  "typeof window.checkWebLogin?await window.checkWebLogin():(document.body.classList.add(\"app-ready\"),hideLoader(),\"functio"
-  "n\"==typeof window.showView&&await window.showView(\"dash\"),preloadViews(),\"function\"==typeof window.startLivePoll&&window"
-  ".startLivePoll())}catch(e){document.body.classList.add(\"app-ready\"),hideLoader();const el=document.getElementById(\"loade"
-  "rText\");el&&(el.textContent=\"โหลดไม่สำเร็จ — รีเฟรชหน้า\")}}boot();"
+static const char a15_bootstrap_bfe709_js[] PROGMEM =
+  "import {initShell,hideLoader,preloadViews} from '/assets/loader.ce2d5e.js';async function boot() {try {await initShell()"
+  ";if (typeof window.checkWebLogin === 'function') {await window.checkWebLogin();} else {document.body.classList.add('app-"
+  "ready');hideLoader();if (typeof window.showView === 'function') await window.showView('dash');preloadViews();if (typeof "
+  "window.startLivePoll === 'function') window.startLivePoll();}} catch (e) {document.body.classList.add('app-ready');hideL"
+  "oader();const el = document.getElementById('loaderText');if (el) el.textContent = 'โหลดไม่สำเร็จ — รีเฟรชหน้า';}}boot();"
 ;
-static const size_t a15_bootstrap_b4d2fb_js_len = 594;
+static const size_t a15_bootstrap_bfe709_js_len = 648;
 
-static const char a16_loader_6686a2_js[] PROGMEM =
-  "const assetCache=new Map,loadedStyles=new Set,loadedScripts=new Set;let manifest=null;export async function fetchAsset(n"
-  "ame){if(assetCache.has(name))return assetCache.get(name);const res=await fetch(\"/assets/\"+name,{credentials:\"same-origin"
-  "\"});if(!res.ok)throw new Error(\"asset_\"+name);const text=await res.text();return assetCache.set(name,text),text}export a"
-  "sync function loadManifest(){const res=await fetch(\"/assets/manifest.json\",{credentials:\"same-origin\",cache:\"no-cache\"})"
-  ";if(!res.ok)throw new Error(\"manifest\");return manifest=await res.json(),manifest}export async function loadStyle(name){"
-  "if(loadedStyles.has(name))return;const link=document.createElement(\"link\");link.rel=\"stylesheet\",link.href=\"/assets/\"+na"
-  "me,document.head.appendChild(link),loadedStyles.add(name)}export async function loadClassicScript(name){loadedScripts.ha"
-  "s(name)||(await new Promise((resolve,reject)=>{const s=document.createElement(\"script\");s.src=\"/assets/\"+name,s.onload=("
-  ")=>resolve(),s.onerror=()=>reject(new Error(\"script_\"+name)),document.body.appendChild(s)}),loadedScripts.add(name))}fun"
-  "ction viewDomId(v){return{dash:\"viewDash\",devices:\"viewDevices\",settings:\"viewSettings\",editor:\"viewEditor\"}[v]}export a"
-  "sync function mountPartial(name,containerId){const m=manifest.partials[name];if(!m)return;const html=await fetchAsset(m)"
-  ",el=document.getElementById(containerId);el&&(el.innerHTML=html)}export async function ensureView(viewName,opts={}){mani"
-  "fest||await loadManifest();const key=viewName,domId=viewDomId(key);if(!domId)return;if(document.getElementById(domId))re"
-  "turn;const spec=manifest.views[key];if(!spec)throw new Error(\"view_\"+key);const root=document.getElementById(\"appRoot\"),"
-  "mount=document.createElement(\"div\");mount.className=\"viewMount\"+(opts.preload?\" hidden\":\"\"),mount.dataset.view=key,mount"
-  ".innerHTML=await fetchAsset(spec.html);for(const node of[...mount.childNodes])node.nodeType===Node.TEXT_NODE&&node.textC"
-  "ontent.trim()&&node.remove();root.appendChild(mount),await Promise.all((spec.css||[]).map(loadStyle)),await Promise.all("
-  "(spec.js||[]).map(loadClassicScript))}export async function loadCoreAssets(){await Promise.all((manifest.core.css||[]).m"
-  "ap(loadStyle));for(const j of manifest.core.js||[])await loadClassicScript(j)}export function hideLoader(){const el=docu"
-  "ment.getElementById(\"appLoader\");el&&el.classList.add(\"done\")}export function preloadViews(){setTimeout(()=>{[\"devices\","
-  "\"settings\"].forEach(v=>ensureView(v,{preload:!0}).catch(()=>{}))},2e3)}export async function initShell(){await loadManif"
-  "est(),await mountPartial(\"login\",\"loginMount\"),await mountPartial(\"safemode\",\"safeModeMount\"),await mountPartial(\"nav\",\""
-  "navMount\");const navHost=document.getElementById(\"navMount\");navHost&&navHost.querySelector(\".nav\")&&document.body.appen"
-  "dChild(navHost.querySelector(\".nav\")),await loadCoreAssets(),await ensureView(\"dash\")}window.AppLoader={ensureView:ensur"
-  "eView,hideLoader:hideLoader,preloadViews:preloadViews};"
+static const char a16_loader_ce2d5e_js[] PROGMEM =
+  "const assetCache = new Map();const loadedStyles = new Set();const loadedScripts = new Set();let manifest = null;export a"
+  "sync function fetchAsset(name) {if (assetCache.has(name)) return assetCache.get(name);const res = await fetch('/assets/'"
+  " + name,{credentials: 'same-origin'});if (!res.ok) throw new Error('asset_' + name);const text = await res.text();assetC"
+  "ache.set(name,text);return text;}export async function loadManifest() {const res = await fetch('/assets/manifest.json',{"
+  "credentials: 'same-origin',cache: 'no-cache'});if (!res.ok) throw new Error('manifest');manifest = await res.json();retu"
+  "rn manifest;}export async function loadStyle(name) {if (loadedStyles.has(name)) return;const link = document.createEleme"
+  "nt('link');link.rel = 'stylesheet';link.href = '/assets/' + name;document.head.appendChild(link);loadedStyles.add(name);"
+  "}export async function loadClassicScript(name) {if (loadedScripts.has(name)) return;await new Promise((resolve,reject) ="
+  "> {const s = document.createElement('script');s.src = '/assets/' + name;s.onload = () => resolve();s.onerror = () => rej"
+  "ect(new Error('script_' + name));document.body.appendChild(s);});loadedScripts.add(name);}function viewDomId(v) {return "
+  "{dash: 'viewDash',devices: 'viewDevices',settings: 'viewSettings',editor: 'viewEditor'}[v];}export async function mountP"
+  "artial(name,containerId) {const m = manifest.partials[name];if (!m) return;const html = await fetchAsset(m);const el = d"
+  "ocument.getElementById(containerId);if (el) el.innerHTML = html;}export async function ensureView(viewName,opts = {}) {i"
+  "f (!manifest) await loadManifest();const key = viewName;const domId = viewDomId(key);if (!domId) return;if (document.get"
+  "ElementById(domId)) return;const spec = manifest.views[key];if (!spec) throw new Error('view_' + key);const root = docum"
+  "ent.getElementById('appRoot');const mount = document.createElement('div');mount.className = 'viewMount' + (opts.preload "
+  "? ' hidden' : '');mount.dataset.view = key;mount.innerHTML = await fetchAsset(spec.html);for (const node of [...mount.ch"
+  "ildNodes]) {if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {node.remove();}}root.appendChild(mount);aw"
+  "ait Promise.all((spec.css || []).map(loadStyle));await Promise.all((spec.js || []).map(loadClassicScript));}export async"
+  " function loadCoreAssets() {await Promise.all((manifest.core.css || []).map(loadStyle));for (const j of manifest.core.js"
+  " || []) await loadClassicScript(j);}export function hideLoader() {const el = document.getElementById('appLoader');if (el"
+  ") el.classList.add('done');}export function preloadViews() {setTimeout(() => {['devices','settings'].forEach((v) => ensu"
+  "reView(v,{preload: true}).catch(() => {}));},2000);}export async function initShell() {await loadManifest();await mountP"
+  "artial('login','loginMount');await mountPartial('safemode','safeModeMount');await mountPartial('nav','navMount');const n"
+  "avHost = document.getElementById('navMount');if (navHost && navHost.querySelector('.nav')) {document.body.appendChild(na"
+  "vHost.querySelector('.nav'));}await loadCoreAssets();await ensureView('dash');}window.AppLoader = {ensureView,hideLoader"
+  ",preloadViews};"
 ;
-static const size_t a16_loader_6686a2_js_len = 2935;
+static const size_t a16_loader_ce2d5e_js_len = 3135;
 
 static const char a17_manifest_json[] PROGMEM =
-  "{\"build\":\"20261028-060531\",\"core\":{\"css\":[\"base.d2ff82.css\",\"components.9b2698.css\",\"loader.91ff4f.css\"],\"js\":[\"app-bund"
+  "{\"build\":\"20261028-062239\",\"core\":{\"css\":[\"base.d2ff82.css\",\"components.9b2698.css\",\"loader.91ff4f.css\"],\"js\":[\"app-bund"
   "le.21cf51.js\"]},\"views\":{\"dash\":{\"html\":\"dash.18f897.html\",\"css\":[\"gate.e5ece7.css\"],\"js\":[]},\"devices\":{\"html\":\"devices"
   ".ce73b3.html\",\"css\":[\"devices.08f800.css\"],\"js\":[]},\"settings\":{\"html\":\"settings.8b1e48.html\",\"css\":[\"settings.45c19a.cs"
   "s\"],\"js\":[]},\"editor\":{\"html\":\"editor.dfe936.html\",\"css\":[\"editor.d059f6.css\"],\"js\":[]}},\"partials\":{\"login\":\"login.f112"
-  "a0.html\",\"safemode\":\"safemode.a96bea.html\",\"nav\":\"nav.2924a4.html\"},\"bootstrap\":\"bootstrap.b4d2fb.js\"}"
+  "a0.html\",\"safemode\":\"safemode.a96bea.html\",\"nav\":\"nav.2924a4.html\"},\"bootstrap\":\"bootstrap.bfe709.js\"}"
 ;
 static const size_t a17_manifest_json_len = 582;
 
@@ -2493,7 +2495,7 @@ static const char a18_index_html[] PROGMEM =
   "loaderWave loaderWave3\"></div>\n    </div>\n    <div class=\"loaderCenter\">\n      <div class=\"loaderRainbowWrap\" aria-hidde"
   "n=\"true\">\n        <div class=\"loaderRainbow\"></div>\n        <div class=\"loaderRainbowHole\"></div>\n      </div>\n      <p "
   "class=\"loaderBrand\" id=\"loaderText\">AutoDoor</p>\n    </div>\n  </div>\n  <div id=\"appRoot\"></div>\n  <div id=\"navMount\"></d"
-  "iv>\n  <script type=\"module\" src=\"/assets/bootstrap.b4d2fb.js\"></script>\n</body>\n</html>\n"
+  "iv>\n  <script type=\"module\" src=\"/assets/bootstrap.bfe709.js\"></script>\n</body>\n</html>\n"
 ;
 static const size_t a18_index_html_len = 1908;
 
@@ -2513,10 +2515,10 @@ static const WebUiAsset kWebUiAssets[] = {
   { "safemode.a96bea.html", "text/html; charset=utf-8", "\"a96bea\"", a12_safemode_a96bea_html, a12_safemode_a96bea_html_len, true },
   { "settings.8b1e48.html", "text/html; charset=utf-8", "\"8b1e48\"", a13_settings_8b1e48_html, a13_settings_8b1e48_html_len, true },
   { "app-bundle.21cf51.js", "application/javascript; charset=utf-8", "\"21cf51\"", a14_app_bundle_21cf51_js, a14_app_bundle_21cf51_js_len, true },
-  { "bootstrap.b4d2fb.js", "application/javascript; charset=utf-8", "\"b4d2fb\"", a15_bootstrap_b4d2fb_js, a15_bootstrap_b4d2fb_js_len, true },
-  { "loader.6686a2.js", "application/javascript; charset=utf-8", "\"6686a2\"", a16_loader_6686a2_js, a16_loader_6686a2_js_len, true },
-  { "manifest.json", "application/json; charset=utf-8", "\"6af954\"", a17_manifest_json, a17_manifest_json_len, false },
-  { "index.html", "text/html; charset=utf-8", "\"be5b06\"", a18_index_html, a18_index_html_len, false },
+  { "bootstrap.bfe709.js", "application/javascript; charset=utf-8", "\"bfe709\"", a15_bootstrap_bfe709_js, a15_bootstrap_bfe709_js_len, true },
+  { "loader.ce2d5e.js", "application/javascript; charset=utf-8", "\"ce2d5e\"", a16_loader_ce2d5e_js, a16_loader_ce2d5e_js_len, true },
+  { "manifest.json", "application/json; charset=utf-8", "\"14bbeb\"", a17_manifest_json, a17_manifest_json_len, false },
+  { "index.html", "text/html; charset=utf-8", "\"2d8dad\"", a18_index_html, a18_index_html_len, false },
 };
 static const size_t kWebUiAssetCount = 19;
 
