@@ -1,7 +1,7 @@
 {
-  "version": "1.0.9",
-  "releaseDate": "2026-10-28 15:29:27 UTC",
+  "version": "1.0.10",
+  "releaseDate": "2026-11-06 14:07:52 UTC",
   "targetChip": "ESP32-C3",
   "file": "firmware_autodoor_ota.bin",
-  "changelog": "V1.0.9: ปรับระบบและความปลอดภัยเป็น 3 กลุ่มย่อยพับได้ (แบบสมดุล 2 รายการต่อกลุ่ม)"
+  "changelog": "V1.0.10: Micro-Staged Boot ลดกระแสพีคตอนเปิดเครื่อง และปรับ CPU 80MHz"
 }
