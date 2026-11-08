@@ -1,7 +1,7 @@
 {
-  "version": "1.0.12",
-  "releaseDate": "2026-11-06 17:21:15 UTC",
+  "version": "1.0.13",
+  "releaseDate": "2026-11-08 18:45:58 UTC",
   "targetChip": "ESP32-C3",
   "file": "firmware_autodoor_ota.bin",
-  "changelog": "V1.0.12: แอนิเมชันแถบสถานะการบูตแบบต่อเนื่องพร้อมตัวเลข % วิ่งแบบ Ease-Out (เร็วตอนต้น ช้าตอนปลาย)"
+  "changelog": "V1.0.13: เพิ่มระบบความปลอดภัย Hardware License Guard ป้องกันการโคลนเฟิร์มแวร์"
 }
