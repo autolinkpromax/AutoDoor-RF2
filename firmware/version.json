@@ -1,7 +1,7 @@
 {
-  "version": "1.0.14",
-  "releaseDate": "2026-11-18 10:07:19 UTC",
+  "version": "1.0.15",
+  "releaseDate": "2026-11-18 14:32:45 UTC",
   "targetChip": "ESP32-C3",
   "file": "firmware_autodoor_ota.bin",
-  "changelog": "V1.0.14: แก้ไขปัญหาไฟเลี้ยงไม่พอขณะเปิดหน้าเว็บ/AP (หน่วงเปิดรีเลย์ STOP ทีละตัว, ปิด AP อัตโนมัติเมื่อเปิดผ่าน Wi-Fi บ้าน, ลดกำลังส่งและพักคลื่นวิทยุขณะสั่งงาน)"
+  "changelog": "v1.0.15: แก้ไขหน้าเว็บค้าง 12% บน all.local (mDNS) พร้อม Auto-Redirect ไป IP จริง โหลดทีละไฟล์พร้อม Retry และปิด Cache หน้าแรก"
 }
