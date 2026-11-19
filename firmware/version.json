@@ -1,7 +1,7 @@
 {
-  "version": "1.0.15",
-  "releaseDate": "2026-11-19 03:33:18 UTC",
+  "version": "1.0.13",
+  "releaseDate": "2026-11-19 13:38:43 UTC",
   "targetChip": "ESP32-C3",
   "file": "firmware_autodoor_ota.bin",
-  "changelog": "v1.0.15: คืนค่าระบบนับถอยหลังเปิดตามเวลา, หยุดรอตามเวลาที่ตั้ง และปิดหลังผ่านเซ็นเซอร์กันหนีบ พร้อมแก้บั๊กสถานะ Stopped"
+  "changelog": "V1.0.13: เพิ่มระบบความปลอดภัย Hardware License Guard ป้องกันการโคลนเฟิร์มแวร์"
 }
