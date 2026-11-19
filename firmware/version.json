@@ -1,7 +1,7 @@
 {
   "version": "1.0.15",
-  "releaseDate": "2026-11-18 14:32:45 UTC",
+  "releaseDate": "2026-11-19 03:33:18 UTC",
   "targetChip": "ESP32-C3",
   "file": "firmware_autodoor_ota.bin",
-  "changelog": "v1.0.15: แก้ไขหน้าเว็บค้าง 12% บน all.local (mDNS) พร้อม Auto-Redirect ไป IP จริง โหลดทีละไฟล์พร้อม Retry และปิด Cache หน้าแรก"
+  "changelog": "v1.0.15: คืนค่าระบบนับถอยหลังเปิดตามเวลา, หยุดรอตามเวลาที่ตั้ง และปิดหลังผ่านเซ็นเซอร์กันหนีบ พร้อมแก้บั๊กสถานะ Stopped"
 }
