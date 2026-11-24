@@ -1,7 +1,7 @@
 {
-  "version": "1.0.16",
-  "releaseDate": "2026-11-23 09:44:24 UTC",
+  "version": "1.0.17",
+  "releaseDate": "2026-11-24 16:01:43 UTC",
   "targetChip": "ESP32-C3",
   "file": "firmware_autodoor_ota.bin",
-  "changelog": "V1.0.16: แก้บั๊ก Blynk redirect/disconnect, เพิ่มระบบ mDNS self-healing + refresh ทุก 90 วิ, และปรับ FastWebServer + รวมไฟล์ WebUI ลดการโหลดเหลือ 4 ไฟล์"
+  "changelog": "V1.0.17: ปิดประตูไวขึ้น ข้าม Pre-Stop เมื่อประตูเปิดสุดแล้ว (Open) + Pre-Stop ล่วงหน้าระหว่างนับถอยหลัง Auto-Close และป้องกันส่ง STOP ซ้ำ"
 }
